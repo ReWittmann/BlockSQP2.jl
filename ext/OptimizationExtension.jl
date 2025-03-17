@@ -57,7 +57,7 @@ function SciMLBase.__solve(prob::OptimizationProblem,
     num_cons = prob.ucons === nothing ? 0 : length(prob.ucons)
     num_x = length(prob.u0)
     T = eltype(prob.u0)
-    reinit_cache = OptimizationBase.ReInitCache(prob.u0, prob.p) # everything that can be changed via `reinit`
+    reinit_cache = Optimization.ReInitCache(prob.u0, prob.p) # everything that can be changed via `reinit`
     f = Optimization.instantiate_function(
         prob.f, reinit_cache, prob.f.adtype, num_cons;
         g = true, h = true, cons_j = true, cons_h = true)
