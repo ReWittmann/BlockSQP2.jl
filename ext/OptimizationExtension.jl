@@ -65,7 +65,7 @@ function SciMLBase.__solve(prob::OptimizationProblem,
             reinit_cache = Optimization.ReInitCache(prob.u0, prob.p) # everything that can be changed via `reinit`
             Optimization.instantiate_function(
                 prob.f, reinit_cache, prob.f.adtype, num_cons;
-                g = true, h = true, cons_j = true, cons_h = true)
+                g = true, h = false, cons_j = true, cons_h = false)
         end
     end
 
