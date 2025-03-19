@@ -127,12 +127,13 @@ function SciMLBase.__solve(prob::OptimizationProblem,
     t1 = time()
 
     x_opt = blockSQP.get_primal_solution(meth)
+    lambda = blockSQP.get_dual_solution(meth)
     f_opt = _loss(x_opt)
     retcode = ret == 0 ? SciMLBase.ReturnCode.Success : SciMLBase.ReturnCode.Default
 
     SciMLBase.build_solution(SciMLBase.DefaultOptimizationCache(prob.f, prob.p), opt,
     x_opt, f_opt;
-         (; original = ret, retcode = retcode,
+         (; original = (ret = ret, multiplier = lambda) , retcode = retcode,
             solve_time = t1 - t0)...)
 end
 
