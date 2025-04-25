@@ -13,6 +13,8 @@ qpOASES_mumps_jll = "ea7176bd-ec22-57e2-b9c1-d49449e64f03"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+SparseDiffTools = "47a9eef4-7e08-11e9-0b38-333d64bd3804"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [extensions]
 ComponentArraysExtension = "ComponentArrays"

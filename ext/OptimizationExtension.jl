@@ -1,7 +1,10 @@
 module OptimizationExtension
 
-using Optimization, blockSQP, Optimization.SciMLBase
+using blockSQP
+using Optimization, Optimization.SciMLBase
 using Pkg
+using Symbolics, SparseDiffTools
+
 SciMLBase.allowsbounds(::BlockSQPOpt) = true
 SciMLBase.allowsconstraints(::BlockSQPOpt) = true
 SciMLBase.allowscallback(::BlockSQPOpt) = false
@@ -16,9 +19,6 @@ function __map_optimizer_args!(prob::OptimizationProblem, opt::blockSQP.BlockSQP
     abstol::Union{Number, Nothing} = nothing,
     reltol::Union{Number, Nothing} = nothing,
     kwargs...)
-    for j in kwargs
-        setproperty!(opt.options, j.first, j.second)
-    end
 
     if !isnothing(maxiters)
         opt.maxiters = maxiters
@@ -34,6 +34,14 @@ function __map_optimizer_args!(prob::OptimizationProblem, opt::blockSQP.BlockSQP
 
     if !isnothing(abstol)
         opt.opttol = abstol
+    end
+
+    @info kwargs
+
+    if :sparsity ∈ keys(kwargs)
+        opt.hessUpdate = 1
+        opt.sparseQP = 2
+        @info "inside map:" opt.sparseQP opt.hessUpdate
     end
 
     return nothing
@@ -69,6 +77,24 @@ function SciMLBase.__solve(prob::OptimizationProblem,
         end
     end
 
+    sparsity_defined = :sparsity ∈ keys(kwargs)
+    blocks_hess = get(kwargs, :sparsity, [0, num_x])
+
+    sparse_jac(x) = begin
+        sparsity_defined || return nothing
+        sparse_ad = AutoSparse(prob.f.adtype)
+        sd = SymbolicsSparsityDetection()
+        sparse_jacobian(sparse_ad, sd, f.cons, zeros(num_cons), x)
+    end
+
+    jac_g_row, jac_g_col, nnz = begin
+        if !sparsity_defined
+            Int32[], Int32[], -1
+        else
+            J_sparse = sparse_jac(prob.u0)
+            J_sparse.rowval .- 1, J_sparse.colptr .- 1, length(J_sparse.nzval)
+        end
+    end
 
     _loss = function (θ)
         x = f.f(θ, prob.p)
@@ -81,17 +107,33 @@ function SciMLBase.__solve(prob::OptimizationProblem,
         return g_
     end
 
-    _cons = num_cons > 0  ? function(θ)
-        c_ = zeros(eltype(θ), num_cons)
-        f.cons(c_, θ)
-        return c_
-    end : x -> zeros(eltype(x), 1) # dummy constraint that it doesnt crash, TODO: FIX THIS
+    _cons = begin
+        if num_cons > 0
+            function(θ)
+                c_ = zeros(eltype(θ), num_cons)
+                f.cons(c_, θ)
+                return c_
+            end
+        else
+            (x) -> zeros(eltype(x), 1) # dummy constraint that it doesnt crash, TODO: FIX THIS
+        end
+    end
 
-    _jac_cons = num_cons > 0 ? function(θ)
-        J = zeros(eltype(θ), num_cons, num_x)
-        f.cons_j(J, θ)
-        return J
-    end : x -> zeros(eltype(x), 1, num_x)
+    _jac_cons = begin
+        if !sparsity_defined
+            if num_cons > 0
+                function(θ)
+                    J = zeros(eltype(θ), num_cons, num_x)
+                    f.cons_j(J, θ)
+                    return J
+                end
+            else
+                (x) -> zeros(eltype(x), 1, num_x)
+            end
+        else
+            (x) -> sparse_jac(x).nzval
+        end
+    end
 
     num_cons = max(1, num_cons)
     _lb = isnothing(prob.lb) ? -Inf * ones(T, num_x) : prob.lb
@@ -106,6 +148,8 @@ function SciMLBase.__solve(prob::OptimizationProblem,
                 maxiters = maxiters, maxtime = maxtime,
                 abstol = abstol, reltol = reltol,
                 ; kwargs...)
+
+    @info opts.sparseQP opts.hessUpdate
     stats = blockSQP.SQPstats("./")
 
     _lb = blockSQP.__lowerbounds(_lb)
@@ -114,7 +158,10 @@ function SciMLBase.__solve(prob::OptimizationProblem,
 
     sqp_prob = blockSQP.blockSQPProblem(_loss, _cons, _g, _jac_cons,
                             _lb, _ub, _lb_cons, _ub_cons,
-                            _u0, _lambda_0)
+                            _u0, _lambda_0; blockIdx = blocks_hess,
+                            jac_g_row = jac_g_row, jac_g_colind = jac_g_col,
+                            nnz = nnz, jac_g_nz = sparsity_defined ? _jac_cons : blockSQP.fnothing
+                            )
 
     t0 = time()
         meth = blockSQP.Solver(sqp_prob, opts, stats)
