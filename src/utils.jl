@@ -38,3 +38,46 @@ function reduceConstrVio(Prob::Ptr{Nothing}, xi::CxxPtr{Float64}, info::CxxPtr{I
     end
     return
 end
+
+# Some functions to deal with sparsity
+function compute_hessian_blocks(A::AbstractMatrix)
+    _A = SparseArrays.SparseMatrixCSC(A)
+    compute_hessian_blocks(_A)
+end
+
+function compute_hessian_blocks(A::SparseArrays.SparseMatrixCSC)
+    n = size(A,1) # assume quadratic matrix here, since it is a hessian
+    blockIdx = [0]
+    max_row = zeros(n)
+    for i=1:n
+        col_start, col_end = A.colptr[i], A.colptr[i+1]-1
+        max_row[i] = maximum(A.rowval[col_start:col_end])
+    end
+
+    for i=1:n-1
+        if max_row[i] <= i && max_row[i+1] > i
+            append!(blockIdx, i)
+        end
+    end
+    append!(blockIdx, n)
+    return blockIdx
+end
+
+function compute_hessian_blocks(f::Function, g::Function, num_x::Integer,
+                 num_cons::Integer; parameters=[])
+    lag(x, mu) = begin
+        fx = f(x, parameters)
+        cons = zeros(eltype(x), num_cons)
+        g(cons, x)
+        return fx + sum(mu .* cons)
+    end
+    input = Vector{Float64}(undef, num_x);
+    sparse_hess = Symbolics.hessian_sparsity(x -> lag(x, ones(num_cons)), input)
+    compute_hessian_blocks(sparse_hess)
+end
+
+function compute_sparse_jacobian(cons, num_cons::Integer, adtype)
+    sparse_ad = AutoSparse(adtype)
+    sd = SymbolicsSparsityDetection()
+    (x) -> sparse_jacobian(sparse_ad, sd, cons, zeros(num_cons), x)
+end

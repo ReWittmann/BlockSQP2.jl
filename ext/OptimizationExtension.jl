@@ -3,14 +3,13 @@ module OptimizationExtension
 using blockSQP
 using Optimization, Optimization.SciMLBase
 using Pkg
-using Symbolics, SparseDiffTools
 
 SciMLBase.allowsbounds(::BlockSQPOpt) = true
 SciMLBase.allowsconstraints(::BlockSQPOpt) = true
 SciMLBase.allowscallback(::BlockSQPOpt) = false
 SciMLBase.supports_opt_cache_interface(opt::BlockSQPOpt) = false
 
-@info "Loading extension for blockSQP..."
+@info "Loading Optimization.jl extension for blockSQP..."
 
 function __map_optimizer_args!(prob::OptimizationProblem, opt::blockSQP.BlockSQPOptions;
     callback = nothing,
@@ -20,6 +19,12 @@ function __map_optimizer_args!(prob::OptimizationProblem, opt::blockSQP.BlockSQP
     reltol::Union{Number, Nothing} = nothing,
     sparsity::Union{Bool, AbstractVector{Int}},
     kwargs...)
+
+    for j in kwargs
+        if j.first in fieldnames(blockSQP.BlockSQPOptions)
+            setproperty!(opt, j.first, j.second)
+        end
+    end
 
     if !isnothing(maxiters)
         opt.maxiters = maxiters
@@ -43,23 +48,6 @@ function __map_optimizer_args!(prob::OptimizationProblem, opt::blockSQP.BlockSQP
     end
 
     return nothing
-end
-
-function find_blocks_from_csc(A::SparseDiffTools.SparseArrays.SparseMatrixCSC)
-    n = size(A,1) # assume quadratic matrix here, since it is a hessian
-    blockIdx = [0]
-    max_row = zeros(n)
-    for i=1:n
-        col_start, col_end = A.colptr[i], A.colptr[i+1]-1
-        max_row[i] = maximum(A.rowval[col_start:col_end])
-    end
-
-    for i=1:n
-        if max_row[i] <= i
-            append!(blockIdx, i)
-        end
-    end
-    return blockIdx
 end
 
 function SciMLBase.__solve(prob::OptimizationProblem,
@@ -93,39 +81,35 @@ function SciMLBase.__solve(prob::OptimizationProblem,
         end
     end
 
-    sparsity_defined = sparsity != false
+    use_sparse_functions = sparsity != false
     blocks_hess = begin
-        if isa(sparsity, Bool)
-            lag(x, mu) = begin
-                fx = f.f(x, prob.p)
-                g = zeros(eltype(x), num_cons)
-                f.cons(g, x)
-                return fx + sum(mu .* g)
+        if use_sparse_functions
+            if isa(sparsity, Bool)
+                blockSQP.compute_hessian_blocks(f.f, f.cons, num_x, num_cons; parameters=prob.p)
+            else
+                @assert (sparsity[1] == 0) && (sparsity[end] == num_x) "sparsity[1] must be 0, sparsity[num_vars+1] must be num_vars"
+                sparsity
             end
-            input = Vector{Float64}(undef, num_x);
-            sparse_hess = Symbolics.hessian_sparsity(x -> lag(x, ones(num_cons)), input)
-            find_blocks_from_csc(sparse_hess)
         else
-            @assert length(sparsity) == num_x + 1
-            @assert (sparsity[0] == 0) && (sparsity[end] == num_x) "sparsity[1] must be 0, sparsity[num_vars+1] must be num_vars"
-            sparsity
+            [0, num_x]
         end
     end
 
-    sparse_jac(x) = begin
-        sparsity_defined || return nothing
-        sparse_ad = AutoSparse(prob.f.adtype)
-        sd = SymbolicsSparsityDetection()
-        sparse_jacobian(sparse_ad, sd, f.cons, zeros(num_cons), x)
+    sparse_jac = begin
+        if use_sparse_functions
+            blockSQP.compute_sparse_jacobian(f.cons, num_cons, prob.f.adtype)
+        else
+            blockSQP.fnothing
+        end
     end
 
 
     jac_g_row, jac_g_col, nnz = begin
-        if !sparsity_defined
-            Int32[], Int32[], -1
-        else
+        if use_sparse_functions
             J_sparse = sparse_jac(prob.u0)
             J_sparse.rowval .- 1, J_sparse.colptr .- 1, length(J_sparse.nzval)
+        else
+            Int32[], Int32[], -1
         end
     end
 
@@ -153,7 +137,9 @@ function SciMLBase.__solve(prob::OptimizationProblem,
     end
 
     _jac_cons = begin
-        if !sparsity_defined
+        if use_sparse_functions
+            (x) -> sparse_jac(x).nzval
+        else
             if num_cons > 0
                 function(θ)
                     J = zeros(eltype(θ), num_cons, num_x)
@@ -163,8 +149,6 @@ function SciMLBase.__solve(prob::OptimizationProblem,
             else
                 (x) -> zeros(eltype(x), 1, num_x)
             end
-        else
-            (x) -> sparse_jac(x).nzval
         end
     end
 
@@ -192,7 +176,7 @@ function SciMLBase.__solve(prob::OptimizationProblem,
                             _lb, _ub, _lb_cons, _ub_cons,
                             _u0, _lambda_0; blockIdx = blocks_hess,
                             jac_g_row = jac_g_row, jac_g_colind = jac_g_col,
-                            nnz = nnz, jac_g_nz = sparsity_defined ? _jac_cons : blockSQP.fnothing
+                            nnz = nnz, jac_g_nz = use_sparse_functions ? _jac_cons : blockSQP.fnothing
                             )
 
     t0 = time()

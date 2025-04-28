@@ -1,10 +1,10 @@
 using blockSQP
-using Test
 using Optimization
+using Test
 using ForwardDiff
 using OptimizationMOI, Ipopt
 using Test
-
+using LinearAlgebra
 @testset "Optimization.jl " begin
 
     @testset "Rosenbrock" begin
@@ -40,7 +40,7 @@ using Test
         x0 = ones(2)
 
         optprob_lin = OptimizationFunction(lin_ex, Optimization.AutoForwardDiff(), cons=cons_unit)
-        prob_lin = OptimizationProblem(optprob_lin, x0, [], lcons=[1.0], ucons=[1.0])
+        prob_lin = OptimizationProblem(optprob_lin, x0, Float64[], lcons=[1.0], ucons=[1.0])
 
         sol_bsqp = solve(prob_lin, BlockSQPOpt())
         sol_ipopt = solve(prob_lin, Ipopt.Optimizer())
@@ -54,4 +54,19 @@ using Test
         end
 
     end
+end
+
+@testset "Sparsity" begin
+    H1 = [1 0 ; 0 1]
+    blocks_h1 = blockSQP.compute_hessian_blocks(H1)
+    @test blocks_h1 == [0,1,2]
+
+    block1, block2 = diagm(ones(3)), ones(2,2)
+    H2 = [block1 zeros(3,2); zeros(2,3) block2]
+    blocks_h2 = blockSQP.compute_hessian_blocks(H2)
+    @test blocks_h2 == [0,1,2,3,5]
+
+    H3 = ones(4,4)
+    blocks_h3 = blockSQP.compute_hessian_blocks(H3)
+    @test blocks_h3 == [0,4]
 end
