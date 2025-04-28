@@ -32,6 +32,25 @@ using LinearAlgebra
                             sol_ipopt_wcons.original.inner.mult_g, atol=1e-8)
         end
     end
+
+    @testset "Sparse problems" begin
+        _f(x,p) = x[1]^2 - 0.5*x[2]^2
+        _g(res, x,p) = res .=  [x[1] - x[2]]
+
+        optprob_wcons = OptimizationFunction(_f, Optimization.AutoForwardDiff(), cons = _g)
+
+        prob = OptimizationProblem(optprob_wcons, rand(2), Float64[], lcons = [0.0], ucons = [0.0])
+        sol_sparse_1 = solve(prob, BlockSQPOpt(); sparsity=true)
+        sol_sparse_2 = solve(prob, BlockSQPOpt(); sparsity=[0,1,2])
+        options = BlockSQPOptions(sparseQP=2, hessUpdate=1)
+        sol_sparse_3 = solve(prob, BlockSQPOpt(); options=options)
+
+        @test SciMLBase.successful_retcode(sol_sparse_1) && SciMLBase.successful_retcode(sol_sparse_2) &&
+                SciMLBase.successful_retcode(sol_sparse_3)
+        @test isapprox(sol_sparse_1.u, sol_sparse_2.u)
+        @test isapprox(sol_sparse_2.u, sol_sparse_3.u)
+
+    end
     @testset "LP on unit circle" begin
         lin_ex(x,p) = sum(x)
         function cons_unit(res,x,p)
