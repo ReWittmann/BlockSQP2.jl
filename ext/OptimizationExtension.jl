@@ -97,7 +97,12 @@ function SciMLBase.__solve(prob::OptimizationProblem,
 
     sparse_jac = begin
         if use_sparse_functions
-            blockSQP.compute_sparse_jacobian(f.cons, num_cons, prob.f.adtype)
+            g_oop = function(θ)
+                c_ = zeros(eltype(θ), num_cons)
+                f.cons(c_, θ)
+                return c_
+            end
+            blockSQP.compute_sparse_jacobian(g_oop, prob.f.adtype)
         else
             blockSQP.fnothing
         end

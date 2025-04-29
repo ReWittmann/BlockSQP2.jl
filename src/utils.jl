@@ -51,7 +51,13 @@ function compute_hessian_blocks(A::SparseArrays.SparseMatrixCSC)
     max_row = zeros(n)
     for i=1:n
         col_start, col_end = A.colptr[i], A.colptr[i+1]-1
-        max_row[i] = maximum(A.rowval[col_start:col_end])
+        if col_end >= col_start
+            corresponding_rows = A.rowval[col_start:col_end]
+            max_row[i] = maximum(corresponding_rows)
+        else
+            # TODO: How to handle empty column? For now: block continues
+            max_row[i] = i+1
+        end
     end
 
     for i=1:n-1
@@ -73,11 +79,11 @@ function compute_hessian_blocks(f::Function, g::Function, num_x::Integer,
     end
     input = Vector{Float64}(undef, num_x);
     sparse_hess = Symbolics.hessian_sparsity(x -> lag(x, ones(num_cons)), input)
+    @info "Hessian sparsity structure:"
+    display(sparse_hess)
     compute_hessian_blocks(sparse_hess)
 end
 
-function compute_sparse_jacobian(cons, num_cons::Integer, adtype)
-    sparse_ad = AutoSparse(adtype)
-    sd = SymbolicsSparsityDetection()
-    (x) -> sparse_jacobian(sparse_ad, sd, cons, zeros(num_cons), x)
+function compute_sparse_jacobian(cons, adtype)
+    (x) -> sparse(DifferentiationInterface.jacobian(cons, adtype, x))
 end

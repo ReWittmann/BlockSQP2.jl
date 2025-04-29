@@ -39,7 +39,7 @@ using LinearAlgebra
 
         optprob_wcons = OptimizationFunction(_f, Optimization.AutoForwardDiff(), cons = _g)
 
-        prob = OptimizationProblem(optprob_wcons, rand(2), Float64[], lcons = [0.0], ucons = [0.0])
+        prob = OptimizationProblem(optprob_wcons, 10.0 *ones(2), Float64[], lcons = [0.0], ucons = [0.0])
         sol_sparse_1 = solve(prob, BlockSQPOpt(); sparsity=true)
         sol_sparse_2 = solve(prob, BlockSQPOpt(); sparsity=[0,1,2])
         options = BlockSQPOptions(sparseQP=2, hessUpdate=1)
