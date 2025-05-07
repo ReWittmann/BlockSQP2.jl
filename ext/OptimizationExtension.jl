@@ -1,6 +1,6 @@
 module OptimizationExtension
 
-using blockSQP
+using blockSQP, blockSQP.SparseArrays
 using Optimization, Optimization.SciMLBase
 using Pkg
 
@@ -60,6 +60,7 @@ function SciMLBase.__solve(prob::OptimizationProblem,
     progress = false,
     sparsity::Union{Bool, AbstractVector{Int}}=false,
     options::Union{Nothing,blockSQP.BlockSQPOptions} = nothing,
+    λ₀::Union{AbstractVector{<:Number},Nothing}=nothing,
     kwargs...)
 
     local x
@@ -95,29 +96,6 @@ function SciMLBase.__solve(prob::OptimizationProblem,
         end
     end
 
-    sparse_jac = begin
-        if use_sparse_functions
-            g_oop = function(θ)
-                c_ = zeros(eltype(θ), num_cons)
-                f.cons(c_, θ)
-                return c_
-            end
-            blockSQP.compute_sparse_jacobian(g_oop, prob.f.adtype)
-        else
-            blockSQP.fnothing
-        end
-    end
-
-
-    jac_g_row, jac_g_col, nnz = begin
-        if use_sparse_functions
-            J_sparse = sparse_jac(prob.u0)
-            J_sparse.rowval .- 1, J_sparse.colptr .- 1, length(J_sparse.nzval)
-        else
-            Int32[], Int32[], -1
-        end
-    end
-
     _loss = function (θ)
         x = f.f(θ, prob.p)
         return first(x)
@@ -142,19 +120,35 @@ function SciMLBase.__solve(prob::OptimizationProblem,
     end
 
     _jac_cons = begin
-        if use_sparse_functions
-            (x) -> sparse_jac(x).nzval
-        else
-            if num_cons > 0
-                function(θ)
-                    J = zeros(eltype(θ), num_cons, num_x)
-                    f.cons_j(J, θ)
-                    return J
-                end
-            else
-                (x) -> zeros(eltype(x), 1, num_x)
+        if num_cons > 0
+            function(θ)
+                J = zeros(eltype(θ), num_cons, num_x)
+                f.cons_j(J, θ)
+                return J
             end
+        else
+            (x) -> zeros(eltype(x), 1, num_x)
         end
+    end
+
+    jac_g_row, jac_g_col, nnz = begin
+        if use_sparse_functions
+            J_sparse = sparse(_jac_cons(prob.u0))
+            J_sparse.rowval .- 1, J_sparse.colptr .- 1, length(J_sparse.nzval)
+        else
+            Int32[], Int32[], -1
+        end
+    end
+
+    sparse_jac(x) = let row = jac_g_row, col = jac_g_col, nnz=nnz
+        _J = sparse(_jac_cons(x))
+        newrow = _J.rowval .- 1
+        newcol = _J.colptr .- 1
+        newnnz = length(_J.nzval)
+        @assert all(row .== newrow)
+        @assert all(col .== newcol)
+        @assert nnz == newnnz
+        _J.nzval
     end
 
     num_cons = max(1, num_cons)
@@ -163,7 +157,7 @@ function SciMLBase.__solve(prob::OptimizationProblem,
     _lb_cons = isnothing(prob.lcons) ? -Inf * ones(T, num_cons) : prob.lcons
     _ub_cons = isnothing(prob.ucons) ? Inf * ones(T, num_cons) : prob.ucons
 
-    _lambda_0 = zeros(T, num_x+num_cons)
+    _lambda_0 = isnothing(λ₀) ? zeros(T, num_x+num_cons) : λ₀
     opts = isnothing(options) ? blockSQP.BlockSQPOptions() : options
 
     __map_optimizer_args!(prob, opts, callback = callback,
@@ -181,7 +175,7 @@ function SciMLBase.__solve(prob::OptimizationProblem,
                             _lb, _ub, _lb_cons, _ub_cons,
                             _u0, _lambda_0; blockIdx = blocks_hess,
                             jac_g_row = jac_g_row, jac_g_colind = jac_g_col,
-                            nnz = nnz, jac_g_nz = use_sparse_functions ? _jac_cons : blockSQP.fnothing
+                            nnz = nnz, jac_g_nz = use_sparse_functions ? sparse_jac : blockSQP.fnothing
                             )
 
     t0 = time()

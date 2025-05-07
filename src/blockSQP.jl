@@ -3,7 +3,7 @@ module blockSQP
 
 	using CxxWrap
     using OpenBLAS32
-    using SparseArrays, Symbolics, DifferentiationInterface
+    using SparseArrays, Symbolics
     using blockSQP_mumps_jll
 
 	@readmodule(()->libblockSQP_MUMPS_wrapper)

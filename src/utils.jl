@@ -83,7 +83,3 @@ function compute_hessian_blocks(f::Function, g::Function, num_x::Integer,
     display(sparse_hess)
     compute_hessian_blocks(sparse_hess)
 end
-
-function compute_sparse_jacobian(cons, adtype)
-    (x) -> sparse(DifferentiationInterface.jacobian(cons, adtype, x))
-end
