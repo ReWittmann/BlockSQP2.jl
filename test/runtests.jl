@@ -22,6 +22,13 @@ using LinearAlgebra
         prob_wocons = OptimizationProblem(optprob_wocons, x0, _p)
         sol_bsqp_wocons = solve(prob_wocons, BlockSQPOpt())
         sol_ipopt_wocons = solve(prob_wocons, Ipopt.Optimizer())
+
+        @testset "Successful optimization" begin
+            @test sol_bsqp_wcons.retcode == ReturnCode.Success
+            @test sol_ipopt_wcons.retcode == ReturnCode.Success
+            @test sol_bsqp_wocons.retcode == ReturnCode.Success
+            @test sol_ipopt_wocons.retcode == ReturnCode.Success
+        end
         @testset "Primal solution" begin
             @test isapprox(sol_bsqp_wcons.u, sol_ipopt_wcons.u)
             @test isapprox(sol_bsqp_wocons.u, sol_ipopt_wocons.u)
@@ -30,6 +37,30 @@ using LinearAlgebra
         @testset "Lagrange multiplier" begin
             @test isapprox(sol_bsqp_wcons.original.multiplier,
                             sol_ipopt_wcons.original.inner.mult_g, atol=1e-8)
+        end
+
+        @testset "Cache" begin
+            cache = Optimization.init(prob_wocons, BlockSQPOpt())
+            sol = Optimization.solve!(cache)
+            @test sol.retcode == ReturnCode.Success
+        end
+
+        @testset "Callback" begin
+            cb(x,l) = begin
+                println(l)
+                return false
+            end
+
+            cb1(x,l) = begin
+                println(l)
+                return x.iter > 5 # Stop after five iterations
+            end
+
+            sol_bsqp_wcons_cb = solve(prob_wcons, BlockSQPOpt(); callback=cb)
+            sol_bsqp_wcons_cb1 = solve(prob_wcons, BlockSQPOpt(); callback=cb1)
+
+            @test sol_bsqp_wcons_cb.retcode == ReturnCode.Success
+            @test sol_bsqp_wcons_cb1.retcode == ReturnCode.Default
         end
     end
 

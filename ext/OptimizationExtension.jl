@@ -23,7 +23,7 @@ function SciMLBase.__init(prob::SciMLBase.OptimizationProblem, opt::BlockSQPOpt,
         use_sparse_functions = sparsity != false || options.sparseQP == 2
         num_x = prob.u0 |> length
         num_cons = prob.ucons === nothing ? 0 : length(prob.ucons)
-        @info sparsity
+
         blocks_hess = begin
             if use_sparse_functions
                 if isa(sparsity, Bool)
@@ -40,7 +40,7 @@ function SciMLBase.__init(prob::SciMLBase.OptimizationProblem, opt::BlockSQPOpt,
                 [0, num_x]
             end
         end
-        @info blocks_hess
+
     return OptimizationCache(prob, opt; callback = callback, progress = progress,
         use_sparse_functions = use_sparse_functions, sparsity = blocks_hess, options=options,
         maxiters = maxiters, kwargs...)
@@ -104,18 +104,8 @@ function SciMLBase.__solve(
 
     callback = cache.callback
 
-    global iter = 0
-    global x_prev = similar(cache.u0)
     _loss = function (θ)
         x = cache.f(θ, cache.p)
-        if !isequal(x_prev, θ)
-            state = Optimization.OptimizationState(iter = iter,
-                u = θ,
-                objective = x[1])
-            cache.callback(state, x[1])
-            iter +=1
-            x_prev .= θ
-        end
         return only(x)
     end
 
@@ -197,16 +187,28 @@ function SciMLBase.__solve(
                             jac_g_nz = use_sparse_functions ? sparse_jac : blockSQP.fnothing
                             )
 
+    meth = blockSQP.Solver(sqp_prob, opts, stats)
+
+    blockSQP.init(meth)
     t0 = time()
-        meth = blockSQP.Solver(sqp_prob, opts, stats)
-
-        blockSQP.init(meth)
-
+    if cache.callback == Optimization.DEFAULT_CALLBACK
         ret = blockSQP.run(meth, opts.maxiters, 1)
-
-        blockSQP.finish(meth)
+    else
+        for i=1:opts.maxiters
+            ret = blockSQP.run(meth, 1, 1)
+            _iterate = blockSQP.get_primal_solution(meth)
+            _obj = _loss(_iterate)[1]
+            state = Optimization.OptimizationState(iter = i,
+                u = _iterate,
+                objective = _obj[1])
+            cret = cache.callback(state, _obj)
+            (cret || ret == 0) && break
+        end
+    end
+    blockSQP.finish(meth)
     t1 = time()
 
+    # TODO: Save number of iterations somehow
     x_opt = blockSQP.get_primal_solution(meth)
     lambda = blockSQP.get_dual_solution(meth)
     f_opt = _loss(x_opt)
