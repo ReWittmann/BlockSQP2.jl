@@ -1,0 +1,14 @@
+ # Installation guide
+
+ This package requires the QP solver qpOASES in its sparse version. Currently, the Julia package for this qpOASES version is not registered. Therefore, both .jll packages for qpOASES and blockSQP have to be added by hand. The procedure of installing this package is hence:
+
+ ```
+git clone https://kosinus.math.uni-magdeburg.de/-/ide/project/mathopt/software/blocksqp.jl
+
+cd blocksqp.jl
+julia --project
+using Pkg
+Pkg.add(url="https://github.com/chplate/qpoases_mumps")
+Pkg.add(url="https://github.com/chplate/blocksqp_mumps")
+using blockSQP
+ ```
