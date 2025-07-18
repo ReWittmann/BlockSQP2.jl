@@ -2,37 +2,37 @@
 mutable struct blockSQPOptions
     opttol::Float64
     nlinfeastol::Float64
-    maxiters::Int32
-    globalization::Int32
-    hessUpdate::Int32
-    fallbackUpdate::Int32
-    hessScaling::Int32
-    fallbackScaling::Int32
-    hessLimMem::Int32
-    hessMemsize::Int32
-    maxConsecSkippedUpdates::Int32
-    blockHess::Int32
-    whichSecondDerv::Int32
-    sparseQP::Int32
-    printLevel::Int32
-    printColor::Int32
-    debugLevel::Int32
+    maxiters::Cint
+    globalization::Cint
+    hessUpdate::Cint
+    fallbackUpdate::Cint
+    hessScaling::Cint
+    fallbackScaling::Cint
+    hessLimMem::Cint
+    hessMemsize::Cint
+    maxConsecSkippedUpdates::Cint
+    blockHess::Cint
+    whichSecondDerv::Cint
+    sparseQP::Cint
+    printLevel::Cint
+    printColor::Cint
+    debugLevel::Cint
     which_QPsolver::String
-    maxSOCiter::Int32
-    maxConvQP::Int32
-    convStrategy::Int32
-    skipFirstGlobalization::Int32
+    maxSOCiter::Cint
+    maxConvQP::Cint
+    convStrategy::Cint
+    skipFirstGlobalization::Cint
     hessDampFac::Float64
-    hessDamp::Int32
+    hessDamp::Cint
     colEps::Float64
     colTau1::Float64
     colTau2::Float64
     eps::Float64
     inf::Float64
-    restoreFeas::Int32
-    maxLineSearch::Int32
-    maxConsecReducedSteps::Int32
-    maxItQP::Int32
+    restoreFeas::Cint
+    maxLineSearch::Cint
+    maxConsecReducedSteps::Cint
+    maxItQP::Cint
     maxTimeQP::Float64
     iniHessDiag::Float64
     function BlockSQPOptions(;
@@ -125,32 +125,31 @@ mutable struct blockSQPOptions
     end
 end
 =#
-abstract type QPsolver_options end
 
 #=
 mutable struct blockSQPOptions
     opt_tol::Float64
     feas_tol::Float64
-    maxiters::Int32
+    maxiters::Cint
     enable_linesearch::CxxBool
-    hess_approx::Int32
-    fallback_approx::Int32
-    sizing::Int32
-    fallback_sizing::Int32
+    hess_approx::Cint
+    fallback_approx::Cint
+    sizing::Cint
+    fallback_sizing::Cint
     lim_mem::CxxBool
-    mem_size::Int32
-    max_consec_skipped_updates::Int32
-    block_hess::Int32
-    exact_hess::Int32
+    mem_size::Cint
+    max_consec_skipped_updates::Cint
+    block_hess::Cint
+    exact_hess::Cint
     sparse::Bool
-    print_level::Int32
-    result_print_color::Int32
-    debug_level::Int32
+    print_level::Cint
+    result_print_color::Cint
+    debug_level::Cint
     qpsol::String
     qpsol_options::Union{QPsolver_options, Nothing}
-    max_SOC::Int32
-    max_conv_QPs::Int32
-    conv_strategy::Int32
+    max_SOC::Cint
+    max_conv_QPs::Cint
+    conv_strategy::Cint
     skip_first_linesearch::CxxBool
     BFGS_damping_factor::Float64
     COL_eps::Float64
@@ -160,9 +159,9 @@ mutable struct blockSQPOptions
     eps::Float64
     inf::Float64
     enable_rest::CxxBool
-    max_linesearch_steps::Int32
-    max_consec_reduced_steps::Int32
-    max_QP_it::Int32
+    max_linesearch_steps::Cint
+    max_consec_reduced_steps::Cint
+    max_QP_it::Cint
     max_QP_secs::Float64
     initial_hess_scale::Float64
     function blockSQPOptions(;
@@ -170,24 +169,24 @@ mutable struct blockSQPOptions
                             feas_tol::Float64 = 1.0e-6,
                             maxiters::Integer=100,
                             enable_linesearch::Bool = true,
-                            hess_approx::Integer = Int32(1),
-                            fallback_approx::Integer = Int32(2),
-                            sizing::Integer = Int32(1),
-                            fallback_sizing::Integer = Int32(2),
+                            hess_approx::Integer = Cint(1),
+                            fallback_approx::Integer = Cint(2),
+                            sizing::Integer = Cint(1),
+                            fallback_sizing::Integer = Cint(2),
                             lim_mem::Bool = true,
-                            mem_size::Integer = Int32(20),
-                            max_consec_skipped_updates::Int32 = Int32(200),
-                            block_hess::Integer = Int32(1),
-                            exact_hess::Integer = Int32(0),
+                            mem_size::Integer = Cint(20),
+                            max_consec_skipped_updates::Cint = Cint(200),
+                            block_hess::Integer = Cint(1),
+                            exact_hess::Integer = Cint(0),
                             sparse::Bool = true,
-                            print_level::Integer = Int32(2),
-                            result_print_color::Integer=Int32(2),
-                            debug_level::Integer = Int32(0),
+                            print_level::Integer = Cint(2),
+                            result_print_color::Integer=Cint(2),
+                            debug_level::Integer = Cint(0),
                             qpsol::String = "qpOASES",
                             qpsol_options::Union{QPsolver_options, Nothing} = nothing,
-                            max_SOC::Integer=Int32(3),
-                            max_conv_QPs::Integer=Int32(1),
-                            conv_strategy::Integer=Int32(0),
+                            max_SOC::Integer=Cint(3),
+                            max_conv_QPs::Integer=Cint(1),
+                            conv_strategy::Integer=Cint(0),
                             skip_first_linesearch::Bool=false,
                             BFGS_damping_factor::Float64=1/3,
                             COL_eps::Float64=0.1,
@@ -197,9 +196,9 @@ mutable struct blockSQPOptions
                             eps::Float64=1e-16,
                             inf::Float64=Inf,
                             enable_rest::Bool=true,
-                            max_linesearch_steps::Integer=Int32(20),
-                            max_consec_reduced_steps::Integer=Int32(100),
-                            max_QP_it::Integer=Int32(5000),
+                            max_linesearch_steps::Integer=Cint(20),
+                            max_consec_reduced_steps::Integer=Cint(100),
+                            max_QP_it::Integer=Cint(5000),
                             max_QP_secs::Float64=120.0,
                             initial_hess_scale::Float64=1.0
                             )

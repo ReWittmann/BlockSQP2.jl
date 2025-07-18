@@ -17,7 +17,7 @@ module blockSQP
 	end
 
 	export setindex!
-
+    
     function __lowerbounds(x::AbstractVector)
         return x
     end
@@ -45,6 +45,6 @@ module blockSQP
 
     include("solver.jl")
     
-    include("condenser.jl")
+    # include("condenser.jl")
 
 end # module blockSQP

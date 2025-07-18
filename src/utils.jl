@@ -1,4 +1,4 @@
-function lower_to_full!(arr1::Array{Float64, 1}, arr2::Array{Float64, 1}, n::Int32)
+function lower_to_full!(arr1::Array{Float64, 1}, arr2::Array{Float64, 1}, n::Integer)
     for i = 1:n
         for j = 0:(i-1)
             arr2[i + j*n] = arr1[i + j*n - Int64(j*(j+1)//2)]
@@ -12,7 +12,7 @@ function lower_to_full!(arr1::Array{Float64, 1}, arr2::Array{Float64, 1}, n::Int
     end
 end
 
-function full_to_lower!(arr1::Array{Float64, 1}, arr2::Array{Float64, 1}, n::Int32)
+function full_to_lower!(arr1::Array{Float64, 1}, arr2::Array{Float64, 1}, n::Integer)
     for i = 1:n
         for j = 0:(i-1)
             arr2[i + j*n - Int64(j*(j+1)//2)] = arr1[i + j*n]
@@ -20,20 +20,19 @@ function full_to_lower!(arr1::Array{Float64, 1}, arr2::Array{Float64, 1}, n::Int
     end
 end
 
-function make_sparse(B_prob::blockSQPProblem, nnz::Integer, jac_nz::Function, jac_row::Array{Int32, 1}, jac_col::Array{Int32, 1})
+function make_sparse!(B_prob::blockSQPProblem, nnz::Integer, jac_nz::Function, jac_row::Vector{T}, jac_col::Vector{T}) where T <: Integer
     B_prob.jac_g_nz = jac_nz
-    B_prob.jac_g_row = jac_row
-    B_prob.jac_g_colind = jac_col
-    B_prob.nnz = Int32(nnz)
+    B_prob.jac_g_row = [Cint(x) for x in jac_row]
+    B_prob.jac_g_colind = [Cint(x) for x in jac_col]
+    B_prob.nnz = Cint(nnz)
 end
 
-
-function reduceConstrVio(Prob::Ptr{Nothing}, xi::CxxPtr{Float64}, info::CxxPtr{Int32})
+function reduceConstrVio(Prob::Ptr{Cvoid}, xi::Ptr{Cdouble}, info::Ptr{Cint})
     Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
     if Jprob.continuity_restoration == fnothing
-        info[] = Int32(1)
+        info[] = Cint(1)
     else
-        xi_arr = unsafe_wrap(Array{Float64, 1}, xi.cpp_object, Jprob.nVar, own = false)
+        xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi.cpp_object, Jprob.nVar, own = false)
         xi_arr[:] = Jprob.continuity_restoration(xi_arr)
     end
     return

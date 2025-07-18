@@ -1,53 +1,59 @@
+struct vblock
+   size::Integer
+   dependent::Bool 
+end
+
 mutable struct blockSQPProblem
 
-    nVar::Int32
-    nCon::Int32
-    nnz::Int32
-    blockIdx::Array{Int32, 1}
-    vblocks::Array{vblock, 1}
+    nVar::Cint
+    nCon::Cint
+    nnz::Cint
+    blockIdx::Vector{Cint}
     
-    lb_var::Array{Float64, 1}
-    ub_var::Array{Float64, 1}
-    lb_con::Array{Float64, 1}
-    ub_con::Array{Float64, 1}
-    lb_obj::Float64
-    ub_obj::Float64
-
-    f::Function
-    g::Function
-    grad_f::Function
-    jac_g::Function
-    continuity_restoration::Function
-    last_hessBlock::Function
-    hess::Function
+    vblocks::Vector{vblock}
+    
+    lb_var::Vector{Cdouble}
+    ub_var::Vector{Cdouble}
+    lb_con::Vector{Cdouble}
+    ub_con::Vector{Cdouble}
+    lb_obj::Cdouble
+    ub_obj::Cdouble
+    
+    f::Function #Vector{Cdouble}[nVar] -> Cdouble
+    g::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nCon]
+    grad_f::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nVar]
+    jac_g::Function #Vector{Cdouble}[nVar] -> Matrix{Cdouble, 2}[nCon, nVar]
+    continuity_restoration::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nVar]
+    last_hessBlock::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[lastBlocksize*(lastBlocksize + 1)/2] #lower diagonal elements
+    hess::Function #Vector{Cdouble}[nVar] -> Vector{Vector{Cdouble}}[blocksize*(blocksize + 1)/2][length(blockIdx) - 1] #See utils.jl lower_to_full!, full_to_lower!
     
     jac_g_nz::Function
-    jac_g_row::Array{Int32, 1}
-    jac_g_colind::Array{Int32, 1}
+    jac_g_row::Vector{Cint}
+    jac_g_colind::Vector{Cint}
 
-    x0::Array{Float64, 1}
-    lambda0::Array{Float64, 1}
+    x0::Vector{Cdouble}
+    lambda0::Vector{Cdouble}
 
     blockSQPProblem(f::Function,
                     g::Function,
                     grad_f::Function,
                     jac_g::Function,
-                    lb_var::Array{Float64, 1},
-                    ub_var::Array{Float64, 1},
-                    lb_con::Array{Float64, 1},
-                    ub_con::Array{Float64, 1},
-                    x0::Array{Float64, 1},
-                    lambda0::Array{Float64,1};
-                    lb_obj = -Inf, 
-                    ub_obj = Inf,
-                    nnz = Int32(-1),
-                    blockIdx = [0, length(lb_var)],
-                    vblocks::Array{vblock, 1} = vblock[],
-                    jac_g_row = Int32[],
-                    jac_g_colind = Int32[],
-                    jac_g_nz = fnothing, continuity_restoration = fnothing,
-                    last_hessBlock = fnothing, hess = fnothing
-                    ) = new(Int32(length(lb_var)), Int32(length(lb_con)), nnz, blockIdx, vblocks,
+                    lb_var::Vector{Cdouble},
+                    ub_var::Vector{Cdouble},
+                    lb_con::Vector{Cdouble},
+                    ub_con::Vector{Cdouble},
+                    x0::Vector{Cdouble},
+                    lambda0::Vector{Cdouble};
+                    lb_obj::Cdouble = Cdouble(-Inf), 
+                    ub_obj::Cdouble = Cdouble(Inf),
+                    nnz::Cint = Cint(-1),
+                    blockIdx::Vector{Cint} = [0, Cint(length(lb_var))],
+                    vblocks::Vector{vblock} = vblock[],
+                    jac_g_row::Vector{Cint} = Cint[],
+                    jac_g_colind::Vector{Cint} = Cint[],
+                    jac_g_nz::Function = fnothing, continuity_restoration::Function = fnothing,
+                    last_hessBlock::Function = fnothing, hess::Function = fnothing
+                    ) = new(Cint(length(lb_var)), Cint(length(lb_con)), nnz, blockIdx, vblocks,
                     lb_var, ub_var, lb_con, ub_con, lb_obj, ub_obj,
                     f, g, grad_f, jac_g, jac_g_nz, continuity_restoration, last_hessBlock,
                     hess, jac_g_row, jac_g_colind, x0, lambda0
