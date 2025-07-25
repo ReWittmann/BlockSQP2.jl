@@ -17,10 +17,10 @@ function SciMLBase.__init(prob::SciMLBase.OptimizationProblem, opt::BlockSQPOpt,
         ;
         callback = Optimization.DEFAULT_CALLBACK,
         progress = false, maxiters=nothing,
-        options::BlockSQPOptions=BlockSQPOptions(),
+        options::blockSQPOptions=blockSQPOptions(),
         sparsity::Union{Vector{<:Integer}, Bool}=false, kwargs...)
 
-        use_sparse_functions = sparsity != false || options.sparseQP == 2
+        use_sparse_functions = sparsity != false || options.sparse
         num_x = prob.u0 |> length
         num_cons = prob.ucons === nothing ? 0 : length(prob.ucons)
 
@@ -47,7 +47,7 @@ function SciMLBase.__init(prob::SciMLBase.OptimizationProblem, opt::BlockSQPOpt,
 end
 
 function __map_optimizer_args!(cache::OptimizationCache,
-    opt::blockSQP.BlockSQPOptions;
+    opt::blockSQP.blockSQPOptions;
     callback = nothing,
     maxiters::Union{Number, Nothing} = nothing,
     maxtime::Union{Number, Nothing} = nothing,
@@ -57,7 +57,7 @@ function __map_optimizer_args!(cache::OptimizationCache,
     kwargs...)
 
     for j in kwargs
-        if j.first in fieldnames(blockSQP.BlockSQPOptions)
+        if j.first in fieldnames(blockSQP.blockSQPOptions)
             setproperty!(opt, j.first, j.second)
         end
     end
@@ -75,12 +75,12 @@ function __map_optimizer_args!(cache::OptimizationCache,
     end
 
     if !isnothing(abstol)
-        opt.opttol = abstol
+        opt.opt_tol = abstol
     end
 
     if length(sparsity) > 2
-        opt.hessUpdate = 1
-        opt.sparseQP = 2
+        opt.hess_approx = 1
+        opt.sparse = true
     end
 
     return nothing
@@ -176,9 +176,9 @@ function SciMLBase.__solve(
 
     sqp_prob = blockSQP.blockSQPProblem(_loss, _cons, _g, _jac_cons,
                             _lb, _ub, _lb_cons, _ub_cons,
-                            _u0, _lambda_0; blockIdx = sparsity,
-                            jac_g_row = jac_g_row, jac_g_colind = jac_g_col,
-                            nnz = nnz,
+                            _u0, _lambda_0; blockIdx = [Cint(x) for x in sparsity],
+                            jac_g_row = [Cint(x) for x in jac_g_row], jac_g_colind = [Cint(x) for x in jac_g_col],
+                            nnz = Cint(nnz),
                             jac_g_nz = use_sparse_functions ? sparse_jac : blockSQP.fnothing
                             )
 
