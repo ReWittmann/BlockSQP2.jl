@@ -152,6 +152,11 @@ function finish!(sol::Solver)
     ccall(@dlsym(BSQP, "SQPmethod_finish"), Cvoid, (Ptr{Cvoid},), sol.SQPmethod_obj)
 end
 
+function get_itCount(sol::Solver)
+    BSQP = libblockSQP[]
+    return ccall(@dlsym(BSQP, "SQPstats_get_itCount"), Cint, (Ptr{Cvoid},), sol.SQPstats_obj)
+end
+
 #Allocate space for solution on julia side and call C method to fill it
 function get_primal_solution(sol::Solver)
     BSQP = libblockSQP[]

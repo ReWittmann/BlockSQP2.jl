@@ -172,4 +172,3 @@ print("\n||xi - xi_rest||_∞ = ", maximum(xi - xi_rest))
 print("\n||lam - lam_rest||_∞ ", maximum(lam - lam_rest), "\n")
 
 
-print("\nIf there is a malloc/linked list/etc. error below this, its QPALMs fault :P\n\n")

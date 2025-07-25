@@ -204,6 +204,8 @@ function SciMLBase.__solve(
     t1 = time()
 
     # TODO: Save number of iterations somehow
+    num_it = Int64(blockSQP.get_itCount(meth))
+    
     x_opt = blockSQP.get_primal_solution(meth)
     lambda = blockSQP.get_dual_solution(meth)
     f_opt = _loss(x_opt)
