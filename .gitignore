@@ -14,7 +14,7 @@ __pycache__
 .vscode
 .VSCodeCounter
 .vs
-
+Manifest.toml
 
 build/
 install/
