@@ -20,13 +20,28 @@ function full_to_lower!(arr1::Vector{FLOAT_T_1}, arr2::Vector{FLOAT_T_2}, n::Int
     end
 end
 
-function make_sparse!(B_prob::blockSQPProblem, nnz::Integer, jac_nz::Function, jac_row::Vector{T}, jac_col::Vector{T}) where T <: Integer
-    B_prob.jac_g_nz = jac_nz
-    B_prob.jac_g_row = [Cint(x) for x in jac_row]
-    B_prob.jac_g_colind = [Cint(x) for x in jac_col]
-    B_prob.nnz = Cint(nnz)
+
+
+# Some functions to deal with sparsity
+function compute_hessian_blocks(A::AbstractMatrix)
+    _A = SparseArrays.SparseMatrixCSC(A)
+    compute_hessian_blocks(_A)
 end
 
+function compute_hessian_blocks(A::SparseArrays.SparseMatrixCSC)
+    n = size(A,1) # assume quadratic matrix here, since it is a hessian
+    blockIdx = [0]
+    max_row = zeros(n)
+    for i=1:n
+        col_start, col_end = A.colptr[i], A.colptr[i+1]-1
+        if col_end >= col_start
+            corresponding_rows = A.rowval[col_start:col_end]
+            max_row[i] = maximum(corresponding_rows)
+        else
+            # TODO: How to handle empty column? For now: block continues
+            max_row[i] = i+1
+        end
+    end
 
 # Some functions to deal with sparsity
 function compute_hessian_blocks(A::AbstractMatrix)

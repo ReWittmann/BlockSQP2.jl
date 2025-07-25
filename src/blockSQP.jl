@@ -1,4 +1,6 @@
 module blockSQP
+    using SparseArrays, Symbolics
+
 	import Base.setproperty!, Base.getproperty
 
 	using CxxWrap

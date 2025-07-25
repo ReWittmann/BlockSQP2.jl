@@ -58,3 +58,10 @@ mutable struct blockSQPProblem
                             hess, jac_g_row, jac_g_colind, x0, lambda0
                             )
 end
+
+function make_sparse!(B_prob::blockSQPProblem, nnz::Integer, jac_nz::Function, jac_row::Vector{T}, jac_col::Vector{T}) where T <: Integer
+    B_prob.jac_g_nz = jac_nz
+    B_prob.jac_g_row = [Cint(x) for x in jac_row]
+    B_prob.jac_g_colind = [Cint(x) for x in jac_col]
+    B_prob.nnz = Cint(nnz)
+end
