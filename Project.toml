@@ -4,9 +4,7 @@ authors = ["Christoph Plate <christoph.plate@ovgu.de>", "Reinhold Wittmann <rein
 version = "0.1.0"
 
 [deps]
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
-QPALM = "6c3e646c-629b-11e9-19d9-033f6272e8d4"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
@@ -25,8 +23,6 @@ ForwardDiff = "0.10"
 Ipopt = "1.10"
 Optimization = "~3.19.0, 4"
 OptimizationMOI = "0.5"
-SparseArrays = "1.10"
-Symbolics = "6.38"
 Test = "1"
 julia = "1.6 - 1.11"
 
