@@ -24,14 +24,13 @@ mutable struct blockSQPProblem
     
     continuity_restoration::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nVar]
     
-    
     jac_g_nz::Function
     jac_g_row::Vector{Cint}
     jac_g_colind::Vector{Cint}
 
     x0::Vector{Cdouble}
     lambda0::Vector{Cdouble}
-
+#=
     blockSQPProblem(f::Function,
                     g::Function,
                     grad_f::Function,
@@ -52,11 +51,48 @@ mutable struct blockSQPProblem
                     jac_g_colind::Vector{Cint} = Cint[],
                     jac_g_nz::Function = fnothing, continuity_restoration::Function = fnothing,
                     last_hessBlock::Function = fnothing, hess::Function = fnothing
-                    ) = new(Cint(length(lb_var)), Cint(length(lb_con)), nnz, blockIdx, vblocks, cond,
+                    ) = new(Cint(length(lb_var)), Cint(length(lb_con)), nnz, blockIdx, 
+                            vblocks, cond,
                             lb_var, ub_var, lb_con, ub_con, lb_obj, ub_obj,
-                            f, g, grad_f, jac_g, jac_g_nz, continuity_restoration, last_hessBlock,
-                            hess, jac_g_row, jac_g_colind, x0, lambda0
+                            f, g, grad_f, jac_g, last_hessBlock, hess,
+                            continuity_restoration,
+                            jac_g_nz, jac_g_row, jac_g_colind, 
+                            x0, lambda0
                             )
+=#
+
+    blockSQPProblem(f::Function,
+                    g::Function,
+                    grad_f::Function,
+                    jac_g::Function,
+                    lb_var::Vector{FLOAT_T},
+                    ub_var::Vector{FLOAT_T},
+                    lb_con::Vector{FLOAT_T},
+                    ub_con::Vector{FLOAT_T},
+                    x0::Vector{FLOAT_T},
+                    lambda0::Vector{FLOAT_T};
+                    lb_obj::AbstractFloat = -Inf, 
+                    ub_obj::AbstractFloat = Inf,
+                    nnz::Integer = -1,
+                    blockIdx::Vector{INT_T} = [0, Cint(length(lb_var))],
+                    vblocks::Vector{vblock} = vblock[],
+                    cond::Union{Condenser, Nothing} = nothing,
+                    jac_g_row::Vector{INT_T} = Cint[],
+                    jac_g_colind::Vector{INT_T} = Cint[],
+                    jac_g_nz::Function = fnothing, 
+                    continuity_restoration::Function = fnothing,
+                    last_hessBlock::Function = fnothing, 
+                    hess::Function = fnothing
+                    ) where {FLOAT_T <: AbstractFloat, INT_T <: Integer} = 
+                        new(Cint(length(lb_var)), Cint(length(lb_con)), Cint(nnz), [Cint(x) for x in blockIdx], 
+                            vblocks, cond,
+                            [Cdouble(x) for x in lb_var], [Cdouble(x) for x in ub_var], [Cdouble(x) for x in lb_con], [Cdouble(x) for x in ub_con], Cdouble(lb_obj), Cdouble(ub_obj),
+                            f, g, grad_f, jac_g, last_hessBlock, hess,
+                            continuity_restoration,
+                            jac_g_nz, jac_g_row, jac_g_colind, 
+                            x0, lambda0
+                            )
+
 end
 
 function make_sparse!(B_prob::blockSQPProblem, nnz::Integer, jac_nz::Function, jac_row::Vector{T}, jac_col::Vector{T}) where T <: Integer

@@ -119,10 +119,11 @@ end
 function reduceConstrVio(Prob::Ptr{Cvoid}, xi::Ptr{Cdouble}, info::Ptr{Cint})
     Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
     if Jprob.continuity_restoration == fnothing
-        info[] = Cint(1)
+        unsafe_store!(info, Cint(1))
     else
         xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi.cpp_object, Jprob.nVar, own = false)
         xi_arr[:] = Jprob.continuity_restoration(xi_arr)
+        unsafe_store!(info, Cint(0))
     end
     return
 end

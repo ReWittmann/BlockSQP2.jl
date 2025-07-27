@@ -7,7 +7,7 @@ x0 = zeros(2)
 
 cons(res, x, p) = (res .= [x[1]^2 + x[2]^2, x[1] * x[2]])
 optprob_wcons = OptimizationFunction(rosenbrock, Optimization.AutoForwardDiff(), cons = cons)
-prob_wcons = OptimizationProblem(optprob_wcons, x0, ones(2), lcons = [-Inf, -1.0], ucons = [0.8, 2.0])
+prob_wcons = OptimizationProblem(optprob_wcons, x0, [1.0,100.0]; lcons = [-Inf, -1.0], ucons = [0.8, 2.0])
 sol = solve(prob_wcons, BlockSQPOpt())
 sol.original.multiplier
-
+print(sol)

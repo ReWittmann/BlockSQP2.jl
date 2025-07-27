@@ -41,4 +41,4 @@ QPALM = "6c3e646c-629b-11e9-19d9-033f6272e8d4"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Optimization", "ComponentArrays", "ForwardDiff", "Ipopt", "OptimizationMOI", "LinearAlgebra", "QPALM"]
+test = ["Test", "Optimization", "ComponentArrays", "ForwardDiff", "Ipopt", "OptimizationMOI", "LinearAlgebra"]
