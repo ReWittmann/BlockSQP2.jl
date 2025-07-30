@@ -14,34 +14,39 @@ SciMLBase.supports_opt_cache_interface(opt::BlockSQPOpt) = true
 
 @info "Loading Optimization.jl extension for blockSQP..."
 
-function SciMLBase.__init(prob::SciMLBase.OptimizationProblem, opt::BlockSQPOpt,
-        ;
-        callback = Optimization.DEFAULT_CALLBACK,
-        progress = false, maxiters=nothing,
-        options::blockSQPOptions=blockSQPOptions(),
-        sparsity::Union{Vector{<:Integer}, Bool}=false, kwargs...)
-
-        use_sparse_functions = sparsity != false || options.sparse
-        num_x = length(prob.u0)# |> length
-        num_cons = prob.ucons === nothing ? 0 : length(prob.ucons)
-
-        blocks_hess = begin
-            if use_sparse_functions
-                if isa(sparsity, Bool)
-                    function cons_ip(cons,x)
+function SciMLBase.__init(
+            prob::SciMLBase.OptimizationProblem, opt::BlockSQPOpt,
+            ;
+            callback = Optimization.DEFAULT_CALLBACK,
+            progress = false, maxiters=nothing,
+            options::blockSQPOptions=blockSQPOptions(),
+            sparsity::Union{Vector{<:Integer}, Bool}=false, kwargs...
+            )
+    
+    use_sparse_functions = sparsity != false || options.sparse
+    num_x = length(prob.u0)
+    num_cons = prob.ucons === nothing ? 0 : length(prob.ucons)
+    
+    blocks_hess = begin
+        if use_sparse_functions
+            if isa(sparsity, Bool)
+                function cons_ip(cons,x)
+                    if (prob.f.cons !== nothing)
                         prob.f.cons(cons, x, prob.p)
-                        return cons
                     end
-                    blockSQP.compute_hessian_blocks(prob.f.f, cons_ip, num_x, num_cons; parameters=prob.p)
-                else
-                    @assert (sparsity[1] == 0) && (sparsity[end] == num_x) "sparsity[1] must be 0, sparsity[num_vars+1] must be num_vars"
-                    sparsity
+                    return cons
                 end
+                blockSQP.compute_hessian_blocks(prob.f.f, cons_ip, num_x, num_cons; parameters=prob.p)
+                
             else
-                [0, num_x]
+                @assert (sparsity[1] == 0) && (sparsity[end] == num_x) "sparsity[1] must be 0, sparsity[num_vars+1] must be num_vars"
+                sparsity
             end
+        else
+            [0, num_x]
         end
-
+    end
+    
     return OptimizationCache(prob, opt; callback = callback, progress = progress,
         use_sparse_functions = use_sparse_functions, sparsity = blocks_hess, options=options,
         maxiters = maxiters, kwargs...)
@@ -204,23 +209,20 @@ function SciMLBase.__solve(
                 u = _iterate,
                 objective = _obj[1])
             cret = cache.callback(state, _obj)
-            (cret || ret == 0) && break
+            (cret || blockSQP.is_success(ret)) && break
         end
     end
     blockSQP.finish!(meth)
     t1 = time()
     
-    # TODO: Save number of iterations somehow
-    num_it = Int64(blockSQP.get_itCount(meth))
-    
     x_opt = blockSQP.get_primal_solution(meth)
     lambda = blockSQP.get_dual_solution(meth)
     f_opt = _loss(x_opt)
-    retcode = ret == 0 ? SciMLBase.ReturnCode.Success : SciMLBase.ReturnCode.Default
+    retcode = blockSQP.is_success(ret) ? SciMLBase.ReturnCode.Success : SciMLBase.ReturnCode.Default
     
     SciMLBase.build_solution(cache, cache.opt,
     x_opt, f_opt;
-         (; original = (ret = ret, multiplier = lambda, solve_time = t1 - t0) , retcode = retcode,
+         (; original = (ret = ret, multiplier = lambda, solve_time = t1 - t0, solve_it = Int64(blockSQP.get_itCount(meth))) , retcode = retcode,
             )...)
 end
 

@@ -87,8 +87,11 @@ function evaluate_sparse(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}
     if dmode > 0
         gradObj_arr = unsafe_wrap(Array{Cdouble, 1}, gradObj, Jprob.nVar, own = false)
         gradObj_arr[:] = Jprob.grad_f(xi_arr)
-        jac_nz_arr[:] = Jprob.jac_g_nz(xi_arr)
-
+        # jac_nz_arr[:] = Jprob.jac_g_nz(xi_arr)
+        
+        jac_g_nz_eval = Jprob.jac_g_nz(xi_arr)
+        @assert length(jac_g_nz_eval) == Jprob.nnz
+        jac_nz_arr[:] = jac_g_nz_eval
         if dmode == 2
             hess_arr = unsafe_wrap(Array{CxxPtr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
 

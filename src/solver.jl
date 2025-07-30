@@ -22,6 +22,10 @@ end
     misc_error = Cint(-10)
 end
 
+function is_success(ret::SQPresult)
+    return ret == partial_success || ret == success || ret == super_success
+end
+
 mutable struct Solver
     #C++ side objects
     SQPmethod_obj::Ptr{Cvoid}

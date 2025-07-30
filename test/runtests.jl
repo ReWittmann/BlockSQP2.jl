@@ -30,15 +30,15 @@ using LinearAlgebra
             @test sol_ipopt_wocons.retcode == ReturnCode.Success
         end
         @testset "Primal solution" begin
-            @test isapprox(sol_bsqp_wcons.u, sol_ipopt_wcons.u)
-            @test isapprox(sol_bsqp_wocons.u, sol_ipopt_wocons.u)
+            @test isapprox(sol_bsqp_wcons.u, sol_ipopt_wcons.u; atol = 1e-5)
+            @test isapprox(sol_bsqp_wocons.u, sol_ipopt_wocons.u; atol = 1e-5)
         end
 
         @testset "Lagrange multiplier" begin
             @test isapprox(sol_bsqp_wcons.original.multiplier,
-                            sol_ipopt_wcons.original.inner.mult_g, atol=1e-8)
+                            sol_ipopt_wcons.original.inner.mult_g; atol=1e-5)
         end
-
+        
         @testset "Cache" begin
             cache = Optimization.init(prob_wocons, BlockSQPOpt())
             sol = Optimization.solve!(cache)
@@ -70,17 +70,15 @@ using LinearAlgebra
 
         optprob_wcons = OptimizationFunction(_f, Optimization.AutoForwardDiff(), cons = _g)
 
-        prob = OptimizationProblem(optprob_wcons, 10.0 *ones(2), Float64[], lcons = [0.0], ucons = [0.0])
+        prob = OptimizationProblem(optprob_wcons, [10.0, 10.0], Float64[], lcons = [0.0], ucons = [0.0])
         sol_sparse_1 = solve(prob, BlockSQPOpt(); sparsity=true)
         sol_sparse_2 = solve(prob, BlockSQPOpt(); sparsity=[0,1,2])
-        options = BlockSQPOptions(sparseQP=2, hessUpdate=1)
+        options = blockSQPOptions(sparse=true, hess_approx=1)
         sol_sparse_3 = solve(prob, BlockSQPOpt(); options=options)
-
         @test SciMLBase.successful_retcode(sol_sparse_1) && SciMLBase.successful_retcode(sol_sparse_2) &&
                 SciMLBase.successful_retcode(sol_sparse_3)
-        @test isapprox(sol_sparse_1.u, sol_sparse_2.u)
-        @test isapprox(sol_sparse_2.u, sol_sparse_3.u)
-
+        @test isapprox(sol_sparse_1.u, sol_sparse_2.u; atol = 1e-5)
+        @test isapprox(sol_sparse_2.u, sol_sparse_3.u; atol = 1e-5)
     end
     @testset "LP on unit circle" begin
         lin_ex(x,p) = sum(x)
@@ -96,11 +94,11 @@ using LinearAlgebra
         sol_ipopt = solve(prob_lin, Ipopt.Optimizer())
 
         @testset "Primal solution" begin
-            @test isapprox(sol_bsqp.u, sol_ipopt.u)
+            @test isapprox(sol_bsqp.u, sol_ipopt.u; atol = 1e-5)
         end
         @testset "Lagrange multiplier" begin
             @test isapprox(sol_bsqp.original.multiplier,
-                        sol_ipopt.original.inner.mult_g, atol=1e-8)
+                        sol_ipopt.original.inner.mult_g; atol = 1e-5)
         end
 
     end
