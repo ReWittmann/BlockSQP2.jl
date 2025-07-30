@@ -30,7 +30,8 @@ module blockSQP
         libblockSQP[] = try
             print("Attempting to load blocksqp from ", joinpath(Base.@__DIR__, "..", "bin", "libblockSQP_jl"), "\n")
             Base.Libc.Libdl.dlopen(joinpath(Base.@__DIR__, "..", "bin", "libblockSQP_jl"))
-        catch
+        catch blockSQP_load_error
+            print("blockSQP_load_error: ", blockSQP_load_error, "\n")
             @info "Could not load blockSQP dynamic library from bin folder, loading blockSQP_jll instead\n"
             if !hasjll
                 error("Nether local blockSQP dynamic library nor blockSQP_jll are available")
