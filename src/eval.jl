@@ -95,7 +95,7 @@ function evaluate_sparse(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}
         if dmode == 2
             hess_arr = unsafe_wrap(Array{CxxPtr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
 
-            s_last = Jprob.blockIdx[Jprob.n_hessblocks + 1] - Jprob.blockIdx[Jprob.n_hesslbocks]
+            s_last = Jprob.blockIdx[Jprob.n_hessblocks + 1] - Jprob.blockIdx[Jprob.n_hessblocks]
             hess_last = unsafe_wrap(Array{Cdouble,1}, hess_arr[Jprob.n_hessblocks], Cint((s*(s+Cint(1)))//(Cint(2))), own = false)
             hess_last[:] = Jprob.last_hessBlock(xi_arr, lam_arr[Jprob.nVar + 1 : Jprob.nVar + Jprob.nCon])
         end
