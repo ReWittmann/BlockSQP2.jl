@@ -43,6 +43,7 @@ mutable struct blockSQPOptions
     enable_QP_cancellation::Bool
     automatic_scaling::Bool
     enable_premature_termination::Bool
+    indef_delay::Cint
     function blockSQPOptions(;
         maxiters::Integer = 100,
         eps::AbstractFloat = 1.0e-16,
@@ -85,7 +86,8 @@ mutable struct blockSQPOptions
         par_QPs::Bool = false,
         enable_QP_cancellation::Bool = true,
         automatic_scaling::Bool = false,
-        enable_premature_termination::Bool = false
+        enable_premature_termination::Bool = false,
+        indef_delay::Integer = 3
     )
         return new(
             maxiters,
@@ -129,7 +131,8 @@ mutable struct blockSQPOptions
             par_QPs,
             enable_QP_cancellation,
             automatic_scaling,
-            enable_premature_termination
+            enable_premature_termination,
+            indef_delay
         )
     end
 end
@@ -186,6 +189,7 @@ function create_cxx_options(opts::blockSQPOptions)
     ccall(@dlsym(BSQP, "SQPoptions_set_exact_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.exact_hess))
     ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.hess_approx))
     ccall(@dlsym(BSQP, "SQPoptions_set_fallback_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_approx))
+    ccall(@dlsym(BSQP, "SQPoptions_set_indef_delay"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.indef_delay))
     
     # Hessian sizing
     ccall(@dlsym(BSQP, "SQPoptions_set_initial_hess_scale"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.initial_hess_scale))

@@ -43,7 +43,8 @@ opts = blockSQPOptions(opt_tol = 1e-12,
                        sparse = false,
                        print_level = 2,
                        qpsol = "qpOASES",
-                       qpsol_options = QPopts
+                       qpsol_options = QPopts,
+                       indef_delay = 1
                        )
 
 stats = blockSQP.SQPstats("./")

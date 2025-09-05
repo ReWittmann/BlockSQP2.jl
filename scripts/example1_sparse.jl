@@ -44,7 +44,8 @@ opts = blockSQPOptions(
                        enable_linesearch = false,
                        hess_approx = 1,
                        fallback_approx = 2,
-                       print_level = 2
+                       print_level = 2,
+                       indef_delay = 1
 )
 
 
