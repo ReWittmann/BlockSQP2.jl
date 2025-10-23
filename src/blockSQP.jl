@@ -17,13 +17,16 @@ module blockSQP
         end
     end
     
-    const hasjll::Bool =
+    const hasjll::Bool = false
+        #TODO update blockSQP_jll to compatible version
+        #=
         try
             import blockSQP_jll
             true
         catch
             false
         end
+        =#
         
     const libblockSQP = Ref{Ptr{Nothing}}(Ptr{Nothing}())
     function __init__()
