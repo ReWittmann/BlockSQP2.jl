@@ -139,7 +139,7 @@ end
 
 function print_info(J_cond::Condenser)
     BSQP = libblockSQP[]
-    ccall(@dlsym(BSQP, "Condenser_print_debug"), Cvoid, (Ptr{Cvoid},), J_cond.Condenser_obj)
+    ccall(@dlsym(BSQP, "Condenser_print_info"), Cvoid, (Ptr{Cvoid},), J_cond.Condenser_obj)
 end
 
 function condensed_nBlocks(J_cond::Condenser)
