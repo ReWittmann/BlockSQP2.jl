@@ -8,5 +8,5 @@ This package requires the compiled binary of the C interface to blockSQP_2 to be
 
 Afterwards, the package can be managed through the Julia package manager as usual, see <https://docs.julialang.org/en/v1/stdlib/Pkg/>.
 
-###Licensing
+### Licensing
 blockSQP.jl is published under the very permissive zlib license, see LICENSE.txt.
