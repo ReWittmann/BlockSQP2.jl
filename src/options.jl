@@ -239,7 +239,7 @@ function create_cxx_options(opts::blockSQPOptions)
 end
 
 function sparse_options()
-    opts = BlockSQPOptions()
+    opts = blockSQPOptions()
     opts.sparse = true
     opts.enable_linesearch = true
     opts.hess_approx = 1
