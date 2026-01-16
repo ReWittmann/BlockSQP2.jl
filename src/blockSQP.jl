@@ -78,6 +78,6 @@ module blockSQP
 
     include("solver.jl")
     
-    include("NLPstructure_conversion.jl")
+    include("structure.jl")
 
 end # module blockSQP

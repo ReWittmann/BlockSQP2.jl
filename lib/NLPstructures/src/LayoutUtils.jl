@@ -85,12 +85,11 @@ function Base.getindex(ax::AX, @nospecialize(ind::BlockDescriptor)) where {AX <:
 end
 
 function axsubrange(ax::AX, ind::B)  where {AX <: ComponentArrays.AbstractAxis, B <: AbstractBlockDescriptor}
-    return :parent in keys(ind.attr) ? axsubindex(ax, ind.attr[:parent])[ax[ind].idx] : ax[ind].idx
+    return :parent in keys(ind.attr) ? axsubrange(ax, ind.attr[:parent])[ax[ind].idx] : ax[ind].idx
 end
 function axsubrange(ax::AX, @nospecialize(ind::BlockDescriptor))  where {AX <: ComponentArrays.AbstractAxis}
-    return :parent in keys(ind.attr) ? axsubindex(ax, ind.attr[:parent])[ax[ind].idx] : ax[ind].idx
+    return :parent in keys(ind.attr) ? axsubrange(ax, ind.attr[:parent])[ax[ind].idx] : ax[ind].idx
 end
-
 
 
 function Base.view(collection::T, ind::B) where {B <: AbstractBlockDescriptor, T <: ComponentArrays.ComponentArray}
@@ -101,6 +100,9 @@ function Base.view(collection::T, @nospecialize(ind::BlockDescriptor)) where {T 
 end
 
 
+function axsubkeys(ax::AX, @nospecialize(ind::BlockDescriptor)) where {AX <: ComponentArrays.AbstractAxis}
+    return ax[ind].ax |> keys |> collect
+end
 
 # function hessblockindex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
 #     arr = ComponentArray(1:axlength(NLPstruc.vLayout), NLPstruc.vLayout)
@@ -110,15 +112,6 @@ end
 #     return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, NLPstruc.vLayout) .|> Base.Fix2(getfield, :idx) |> collect |> sort! .|> length |> Base.Fix1(append!, [0]) |> cumsum
 # end
 
-function hessblockindex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
-    return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, NLPstruc.vLayout) .|> Base.Fix2(getfield, :idx) |> collect |> sort! |> (arr -> Int64[0, (length(x) for x in arr)...]) |> cumsum
-end
-
-function hessblockindex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: AbstractVector, CB, CL}
-    ax = to_Axis(NLPstruc.vLayout)
-    # return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, arr) .|> (x->x[:]) |> collect |> sort! .|> length |> Base.Fix1(append!, [0]) |> cumsum
-    return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, ax) .|> Base.Fix2(getfield, :idx) |> collect |> sort! .|> length |> Base.Fix1(append!, [0]) |> cumsum
-end
 
 """Extract \"simple\" variable blocks, i.e. blocks that have no subblocks"""
 function simple_vBlocks(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
@@ -135,9 +128,29 @@ function has_parent(@nospecialize(b::BlockDescriptor), @nospecialize(p::BlockDes
     return :parent in keys(b.attr) && (b.attr[:parent] == p || has_parent(b.attr[:parent], p))
 end
 
-function hessBlocks(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL, CB, CL <: ComponentArrays.Axis}
+function has_parent_type(@nospecialize(b::BlockDescriptor), TP::Type{T}) where T <: Block
+    return :parent in keys(b.attr) && (blocktypeof(b.attr[:parent]) isa Type{T} || has_parent_type(b.attr[:parent], TP))
+end
+
+parent_of(@nospecialize(b::BlockDescriptor), @nospecialize(p::BlockDescriptor)) = :parent in keys(b.attr) && b.attr[:parent] == p
+
+function hessBlocks(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     return NLPstruc.vBlocks |> Base.Fix1(filter, x-> (blocktypeof(x) <: Hess)) |> collect |> (arr -> sort(arr, by = (x -> first(axsubrange(NLPstruc.vLayout, x)))))
 end
-# function basic_cBlocks(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
-#    return  
+
+function hessBlockSizes(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
+    return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, NLPstruc.vLayout) .|> Base.Fix2(getfield, :idx) |> collect |> sort! .|> length
+end
+
+function hessBlockIndex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
+    return cumsum(Int64[0, hessBlockSizes(NLPstruc)...])
+end
+
+# function hessblockindex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
+#     return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, NLPstruc.vLayout) .|> Base.Fix2(getfield, :idx) |> collect |> sort! |> (arr -> Int64[0, (length(x) for x in arr)...]) |> cumsum
+# end
+
+# function hessblockindex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: AbstractVector, CB, CL}
+#     ax = to_Axis(NLPstruc.vLayout)
+#     return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, ax) .|> Base.Fix2(getfield, :idx) |> collect |> sort! .|> length |> Base.Fix1(append!, [0]) |> cumsum
 # end
