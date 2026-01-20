@@ -172,14 +172,14 @@ end
 function get_dual_solution(sol::Solver)
     BSQP = libblockSQP[]
     lam_arr = Array{Cdouble, 1}(undef, sol.Jul_Problem.nVar + sol.Jul_Problem.nCon)
-    ccall(@dlsym(BSQP, "SQPmethod_get_lambda"), Cvoid, (Ptr{Cvoid}, Ptr{Cdouble}), sol.SQPmethod_obj, lam_arr)
+    ccall(@dlsym(BSQP, "SQPmethod_get_lambda"), Cvoid, (Ptr{Cvoid}, Ptr{Cdouble}), sol.SQPmethod_obj, pointer(lam_arr))
     return -lam_arr[sol.Jul_Problem.nVar + 1 : end]
 end
 
 function get_dual_solution_full(sol::Solver)
     BSQP = libblockSQP[]
     lam_arr = Array{Cdouble, 1}(undef, sol.Jul_Problem.nVar + sol.Jul_Problem.nCon)
-    ccall(@dlsym(BSQP, "SQPmethod_get_lambda"), Cvoid, (Ptr{Cvoid}, Ptr{Cdouble}), sol.SQPmethod_obj, lam_arr)
+    ccall(@dlsym(BSQP, "SQPmethod_get_lambda"), Cvoid, (Ptr{Cvoid}, Ptr{Cdouble}), sol.SQPmethod_obj, pointer(lam_arr))
     return -lam_arr
 end
 

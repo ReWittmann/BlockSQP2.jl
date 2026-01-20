@@ -35,3 +35,13 @@ end
 
 
 _tags(arg::AbstractVector{Tuple{B, T}}) where {B <: AbstractBlockDescriptor, T} = arg .|> first .|> Base.Fix2(getfield, :tag)
+
+
+function Base.show(io::IO, ::MIME"text/plain", B::BlockDescriptor{T}) where T <: Block
+    _taketag(B::TB) where TB = B
+    _taketag(B::TB) where TB <: BlockDescriptor = B.tag
+    attr = NamedTuple((key, _taketag(B.attr[key])) for key in keys(B.attr))
+    print(io, "BlockDescriptor{", T, "}(tag = ", B.tag, ", flags = ", B.flags, ", attr = ", attr, ")")
+end
+
+Base.show(io::IO, B::BlockDescriptor{T}) where T <: Block = Base.show(io, MIME"text/plain"(), B)

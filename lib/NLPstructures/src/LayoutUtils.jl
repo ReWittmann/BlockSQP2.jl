@@ -155,8 +155,12 @@ function hessBlockSizes(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: Co
     return NLPstruc.vBlocks |> Base.Fix1(filter, x->blocktypeof(x) == Hess) .|> Base.Fix1(getindex, NLPstruc.vLayout) .|> Base.Fix2(getfield, :idx) |> collect |> sort! .|> length
 end
 
-function hessBlockIndex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
+function hessBlockZeroBasedIndex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     return cumsum(Int64[0, hessBlockSizes(NLPstruc)...])
+end
+
+function hessBlockOneBasedIndex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
+    return cumsum(Int64[1, hessBlockSizes(NLPstruc)...])
 end
 
 # function hessblockindex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}

@@ -258,7 +258,6 @@ end
 function sparse_options()
     opts = blockSQPOptions()
     opts.sparse = true
-    opts.enable_linesearch = true
     opts.hess_approx = :SR1
     opts.sizing = :OL
     opts.fallback_approx = :BFGS

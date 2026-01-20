@@ -74,25 +74,24 @@ mutable struct blockSQPProblem
                     lb_obj::AbstractFloat = -Inf, 
                     ub_obj::AbstractFloat = Inf,
                     nnz::Integer = -1,
-                    blockIdx::Vector{INT_T} = [0, Cint(length(lb_var))],
+                    blockIdx::Vector{INT_T_1} = Int64[0, length(lb_var)],
                     vblocks::Vector{vblock} = vblock[],
                     cond::Union{Condenser, Nothing} = nothing,
-                    jac_g_row::Vector{INT_T} = Cint[],
-                    jac_g_colind::Vector{INT_T} = Cint[],
+                    jac_g_row::Vector{INT_T_2} = Int64[],
+                    jac_g_colind::Vector{INT_T_3} = Int64[],
                     jac_g_nz::Function = fnothing, 
                     continuity_restoration::Function = fnothing,
                     last_hessBlock::Function = fnothing, 
                     hess::Function = fnothing
-                    ) where {FLOAT_T <: AbstractFloat, INT_T <: Integer} = 
+                    ) where {FLOAT_T <: AbstractFloat, INT_T_1 <: Integer, INT_T_2 <: Integer, INT_T_3 <: Integer} = 
                         new(Cint(length(lb_var)), Cint(length(lb_con)), Cint(nnz), [Cint(x) for x in blockIdx], 
                             vblocks, cond,
                             [Cdouble(x) for x in lb_var], [Cdouble(x) for x in ub_var], [Cdouble(x) for x in lb_con], [Cdouble(x) for x in ub_con], Cdouble(lb_obj), Cdouble(ub_obj),
                             f, g, grad_f, jac_g, last_hessBlock, hess,
                             continuity_restoration,
-                            jac_g_nz, jac_g_row, jac_g_colind, 
+                            jac_g_nz, [Cint(x) for x in jac_g_row], [Cint(x) for x in jac_g_colind], 
                             x0, lambda0
                             )
-
 end
 
 function make_sparse!(B_prob::blockSQPProblem, nnz::Integer, jac_nz::Function, jac_row::Vector{T}, jac_col::Vector{T}) where T <: Integer
