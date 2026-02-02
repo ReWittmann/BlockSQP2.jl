@@ -26,8 +26,14 @@ struct NLPstructure{VB, VL <: ComponentArrays.AbstractAxis, CB, CL <: ComponentA
     end
 end
 
-# Methods should provide sanity checks for certain block types, 
-# e.g. correct sublayout structure of a MultipleShootingSystemSC
+function NLPstucture(pre_vL::AbstractVector{TupleBD}, pre_cL::AbstractVector{TupleBD})
+    return NLPstructure((get_BlockDescriptors(pre_vL)...,), to_Axis(pre_vL), (get_BlockDescriptors(pre_cL)...,), to_Axis(pre_cL))
+end
+
+"""
+    Methods for specific block types should provide sanity checks for the 
+    layout the BlockDescriptor is embedded in.
+"""
 function assert_layout(::BlockDescriptor{B}, ::NLPstructure) where B <: Block 
     return nothing
 end

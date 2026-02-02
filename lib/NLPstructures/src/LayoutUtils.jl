@@ -81,7 +81,7 @@ function get_BlockDescriptors(arg::Vector{Tuple{B, T}}) where {B <: AbstractBloc
 end
 
 
-# function pad(preVL::Vector{TBD}, btype::Type{BT}, length::Int64, start::Int64 = 1) where {BT <: Block, TBD}
+# function embed(preVL::Vector{TBD}, btype::Type{BT}, length::Int64, start::Int64 = 1) where {BT <: Block, TBD}
 #     VLsize = length(to_ComponentArray(preVL))
 #     leftL = left > 0 ? ((BlockDescriptor{btype}(), left),) : ()
 #     right = length - (left + VLsize)

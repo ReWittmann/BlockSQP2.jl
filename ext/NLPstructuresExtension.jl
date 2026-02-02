@@ -1,11 +1,17 @@
+module NLPstructuresExtension
+
+# function create_vBlocks(struc::NLPstructure)
+#     Dtargets = filter(x->(blocktypeof(x) <: NLPstructures.MultipleShootingSystemSC), struc.vBlocks)
+#     return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), :matching in keys(x.attr) && any(has_parent(x,T) for T in Dtargets))
+# end
+
 function create_vBlocks(struc::NLPstructure)
-    Dtargets = filter(x->(blocktypeof(x) <: NLPstructures.MultipleShootingSystemSC), struc.vBlocks)
-    return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), :matching in keys(x.attr) && any(has_parent(x,T) for T in Dtargets))
+    return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, nlpMSDependent))
 end
 
 
 function create_condenser_args(struc::NLPstructure, add_dep_bounds = :all) #:none, :inactive, :all
-    Dtargets = filter(x->(blocktypeof(x) <: NLPstructures.MultipleShootingSystemSC), struc.vBlocks)
+    Dtargets = filter(x->(blocktypeof(x) <: nlpMSSystemSC), struc.vBlocks)
     if length(Dtargets) == 0
         return nothing
     end
@@ -22,17 +28,17 @@ function create_condenser_args(struc::NLPstructure, add_dep_bounds = :all) #:non
     hsizes = Dhblocks .|> x-> length(struc.vLayout[x].idx)
     
     targets = condensing_target[]
-    for T in Dtargets
-        h0 = Dhblocks[findfirst(Base.Fix2(has_parent, T), Dhblocks)]
+    for DT in Dtargets
+        h0 = Dhblocks[findfirst(Base.Fix2(has_parent, DT), Dhblocks)]
         
-        i0 = findfirst(Base.Fix2(has_parent,T), Dvblocks)
-        i1 = findlast(Base.Fix2(has_parent,T), Dvblocks)
+        i0 = findfirst(Base.Fix2(has_parent,DT), Dvblocks)
+        i1 = findlast(Base.Fix2(has_parent,DT), Dvblocks)
         for i in i0:i1
-            vblocks_args[i].dependent[1] = (:matching in keys(Dvblocks[i].attr) && !has_parent(Dvblocks[i], h0))
+            vblocks_args[i].dependent[1] = has_parent_type(Dvblocks[i], nlpMSDependent)
         end
-        j0 = findfirst(Base.Fix2(has_parent, T.attr[:matchings]), Dcblocks)
-        j1 = findlast(Base.Fix2(has_parent, T.attr[:matchings]), Dcblocks)
-        N = count(Base.Fix2(has_parent, T), Dhblocks) - 1
+        j0 = findfirst(Base.Fix2(has_parent, DT.attr[:matchings]), Dcblocks)
+        j1 = findlast(Base.Fix2(has_parent, DT.attr[:matchings]), Dcblocks)
+        N = count(Base.Fix2(has_parent, DT), Dhblocks) - 1
         
         push!(targets, condensing_target(N, i0-1, i1, j0-1, j1)) 
     end
@@ -43,3 +49,5 @@ function create_condenser_args(struc::NLPstructure, add_dep_bounds = :all) #:non
 end
 
 create_condenser(struc::NLPstructure, add_dep_bounds = :all) = Condenser(create_condenser_args(struc, add_dep_bounds)...)
+
+export create_vBlocks, create_condenser_args, create_condenser

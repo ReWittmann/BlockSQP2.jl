@@ -42,7 +42,10 @@ mutable struct BlockDescriptor{T <: Block} <: AbstractBlockDescriptor
 end
 
 
-"""Default constructor, sets/demands no specific flags or attributes"""
+"""
+    Methods for specific block types should provide sanity checks for the
+    flags and attributes of the BlockDescriptor.
+"""
 function BlockDescriptor{arg_T}(args...; kwargs...) where arg_T <: Block
     return BlockDescriptor{Btype{arg_T}}(args...; kwargs...)
 end

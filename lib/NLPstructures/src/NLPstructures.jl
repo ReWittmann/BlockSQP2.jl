@@ -47,9 +47,10 @@ export axlength, axsubrange, to_NamedTuple, to_ComponentArray, to_UR, to_Axis, a
 
 include("MultipleShootingSystemSC.jl")
 
-@nlpexport StateMatching ParameterMatching ControlMatching
-@nlpexport StateMatchings ParameterMatchings ControlMatchings
-@nlpexport MultipleShootingSystemSC
+@nlpexport MSSystemSC, MSFree, MSDependent, MSMatching, MSMatchings
+# @nlpexport StateMatching ParameterMatching ControlMatching
+# @nlpexport StateMatchings ParameterMatchings ControlMatchings
+# @nlpexport MultipleShootingSystemSC
 
 
 end #module
