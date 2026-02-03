@@ -87,37 +87,37 @@ cLayoutPre = TupleBD[]
 states = BlockDescriptor[]
 controls = BlockDescriptor[]
 
-matchings = BlockDescriptor{msMatchings}(tag = :matchings)
-MSsys = BlockDescriptor{msSystemSC}(matchings = matchings, tag = :MSsys)
+matchings = BlockDescriptor{nlpMatchings}(tag = :matchings)
+MSsys = BlockDescriptor{nlpMultipleShootingDF}(matchings = matchings, tag = :MSsys)
 
 h0 = BlockDescriptor{nlpHess}(parent = MSsys, tag = :h₀)
-u0 = BlockDescriptor{msFree}(parent = h0, tag = :u₀)
+u0 = BlockDescriptor{nlpMSfree}(parent = h0, tag = :u₀)
 
 push!(vLayoutPre, (h0, [(u0, nu)]))
 push!(controls, u0)
 
-c1 = BlockDescriptor{msMatching}(tag = :m₁, parent = matchings, input = [u0])
+c1 = BlockDescriptor{nlpMatching}(tag = :m₁, parent = matchings, input = [u0])
 push!(cLayoutPre, (c1, nx))
 
 hk, uk, ck = h0, u0, c1
 xk = BlockDescriptor()
 for i = 1:(N-1)
-    global hk = BlockDescriptor{nlpHess}(parent = MSsys, tag = Symbol(:h, _subscript(i)))
-    global xk = BlockDescriptor{msDependent}(parent = hk, matching = ck, tag = Symbol(:x, _subscript(i)))
-    global uk = BlockDescriptor{msFree}(parent = hk, tag = Symbol(:u, _subscript(i)))
+    hk = BlockDescriptor{nlpHess}(parent = MSsys, tag = Symbol(:h, _subscript(i)))
+    xk = BlockDescriptor{nlpMSdependent}(parent = hk, matching = ck, tag = Symbol(:x, _subscript(i)))
+    uk = BlockDescriptor{nlpMSfree}(parent = hk, tag = Symbol(:u, _subscript(i)))
     
     push!(vLayoutPre, (hk, [(xk, nx), (uk, nu)]))
     
     push!(states, xk)
     push!(controls, uk)
     
-    global ck = BlockDescriptor{msMatching}(parent = matchings, input = [xk, uk], tag = Symbol(:m, _subscript(i+1)))
+    ck = BlockDescriptor{nlpMatching}(parent = matchings, input = [xk, uk], tag = Symbol(:m, _subscript(i+1)))
     push!(cLayoutPre, (ck, nx))
 end
 
 hN = BlockDescriptor{nlpHess}(parent = MSsys, tag = Symbol(:h, _subscript(N)))
-xN = BlockDescriptor{msDependent}(parent = hN, matching = ck, tag = Symbol(:x, _subscript(N)))
-uN = BlockDescriptor{msFree}(parent = hN, tag = Symbol(:u, _subscript(N)))
+xN = BlockDescriptor{nlpMSdependent}(parent = hN, matching = ck, tag = Symbol(:x, _subscript(N)))
+uN = BlockDescriptor{nlpMSfree}(parent = hN, tag = Symbol(:u, _subscript(N)))
 push!(vLayoutPre, (hN, [(xN, nx), (uN, 0)]))
 push!(states, xN)
 

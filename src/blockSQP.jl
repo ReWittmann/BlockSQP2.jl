@@ -83,4 +83,6 @@ module blockSQP
     include("structures.jl")
     export create_vBlocks, create_condenser_args, create_condenser
     
+    #ComponentArrays is used by NLPstructures submodule, so we always use ComponentArrays for now.
+    include("ComponentArraysExtension.jl")
 end # module blockSQP

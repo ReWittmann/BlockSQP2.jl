@@ -52,6 +52,14 @@ end
 
 BlockDescriptor(args...; kwargs...) = BlockDescriptor{Btype{Block}}(args...; kwargs...)
 
+# Matching blocks should have an input attribute
+function BlockDescriptor{arg_T}(args...; kwargs...) where arg_T <: Matching
+    @assert :input in keys(kwargs) "Matching blocks must have an :input attribute"
+    @assert typeof(kwargs[:input]) <: AbstractVector ":input attribute of a Matching must be an AbstractVector"
+    @assert all(blocktypeof(blk) <: Variables for blk in kwargs[:input]) "Inputs of a Matching must be Variable blocks"
+    return BlockDescriptor{Btype{arg_T}}(args...; kwargs...)
+end
+
 
 function blocktypeof(::BlockDescriptor{T}) where T
     return T

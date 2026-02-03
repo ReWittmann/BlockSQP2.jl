@@ -42,12 +42,13 @@ export NLPstructure, tagmap
 include("LayoutUtils.jl")
 export axlength, axsubrange, to_NamedTuple, to_ComponentArray, to_UR, to_Axis, axsubindex, axsubkeys,
        simple_vBlocks, simple_cBlocks, hessBlocks, hessBlockSizes, hessBlockZeroBasedIndex, hessBlockOneBasedIndex,
-       has_parent, parent_of, has_parent_type, get_BlockDescriptors, tagmap
+       has_parent, parent_of, has_parent_type, get_BlockDescriptors, tagmap, subBlocks
 
 
-include("MultipleShootingSystemSC.jl")
+include("MultipleShootingDF.jl")
 
-export msSystemSC, msFree, msDependent, msMatching, msMatchings
+@nlpexport MultipleShootingDF MSfree MSdependent
+# export msSystemSC, msFree, msDependent, msMatching, msMatchings
 # @nlpexport StateMatching ParameterMatching ControlMatching
 # @nlpexport StateMatchings ParameterMatchings ControlMatchings
 # @nlpexport MultipleShootingSystemSC
@@ -60,7 +61,7 @@ export msSystemSC, msFree, msDependent, msMatching, msMatchings
     As these are highly specific, see the specific extension for required inputs.
 """
 function extract_preLayouts()
-    error("Not a suitable extension method")
+    error("No extension method available to extract layout information from the given objects")
 end
 
 """

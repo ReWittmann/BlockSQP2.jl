@@ -1,20 +1,22 @@
 """
     System of NLP variables resulting from a multiple shooting,
-    with the variables being ordered as [States,Controls] in each
+    with the variables being ordered as DF [Dependent,Free] in each
     shooting interval. All direct children must be of blocktype Hess,
     and have subblocks indicating dependent and free sections.
     
-    msSystemSC
+    MultipleShootingDF
     |...Hess
-        |...msFree
+        |...MSfree
     |...Hess
-        |...msDependent
-        |...msFree
+        |...MSdependent
+        |...MSfree
     |...Hess
-    ...
+     .
+     .
+     .
     |...Hess
-        |...msDependent
-        |...msFree
+        |...MSdependent
+        |...MSfree
     
     The dependent a free sections may have further sublayouts, marking
     e.g. controls and parameters.
@@ -22,24 +24,10 @@
     MultipleShootingMatchings constraint block indicating the state matching
     constraints of the system.
 """
-abstract type msSystemSC <: Variables end
+abstract type MultipleShootingDF <: Variables end
 
-abstract type msFree <: Variables end
-abstract type msDependent <: Variables end
-
-
-"""
-Matching condition for a the dependent states of a multiple shooting system.
-"""
-abstract type msMatching <: Matching end
-
-"""
-    System of NLP constraints that denotes a collection of
-    state matching conditions for a MultipleShootingSystemSC.
-    It must have one child for each shooting stage that is
-    a matching for the dependent variables of that stage.
-"""
-abstract type msMatchings <: Matchings end
+abstract type MSfree <: Variables end
+abstract type MSdependent <: Variables end
 
 
 
@@ -48,13 +36,13 @@ abstract type msMatchings <: Matchings end
 # abstract type ControlMatchings <: Matchings end
 
 
-function BlockDescriptor{arg_T}(args...; kwargs...) where arg_T <: msSystemSC
-    @assert :matchings in keys(kwargs) && blocktypeof(kwargs[:matchings]) == msMatchings
-    return BlockDescriptor{Btype{msSystemSC}}(args...; kwargs...)
+function BlockDescriptor{arg_T}(args...; kwargs...) where arg_T <: MultipleShootingDF
+    @assert :matchings in keys(kwargs) && blocktypeof(kwargs[:matchings]) <: Matchings
+    return BlockDescriptor{Btype{MultipleShootingDF}}(args...; kwargs...)
 end
 
 
-function assert_layout(BD::BlockDescriptor{B}, struc::NLPstructure) where B <: msSystemSC
+function assert_layout(BD::BlockDescriptor{B}, struc::NLPstructure) where B <: MultipleShootingDF
     MP = tagmap(struc)
     axsubBD(AX, ind) = let __MP = MP
         axsubkeys(AX, ind) .|> x->__MP[x]
@@ -69,10 +57,10 @@ function assert_layout(BD::BlockDescriptor{B}, struc::NLPstructure) where B <: m
     Mchildren = axsubBD(struc.cLayout, MTC)
     @assert (length(Mchildren) == length(Hchildren) - 1) "Number matching conditions does not match Hessian block structure"
     
-    #c) First Hessian block only has one subblock of type msFree
+    #c) First Hessian block only has one subblock of type MSfree
     DFchildren = axsubBD(struc.vLayout, first(Hchildren))
     # @assert (length(axsubkeys(struc.vLayout, first(Hchildren))) == 1) "First Hessian block of a MultipleShootingSystemSC must have exactly one subblock"
-    @assert (length(DFchildren) == 1 && blocktypeof(first(DFchildren)) == msFree) "First Hessian block of a MultipleShootingSystemSC must have exactly one subblock"
+    @assert (length(DFchildren) == 1 && blocktypeof(first(DFchildren)) == MSfree) "First Hessian block of a MultipleShootingSystemSC must have exactly one subblock"
 
     
     #d) Hessian blocks except the first and the last must have one control/parameter C subblock and one state S subblock
@@ -80,7 +68,7 @@ function assert_layout(BD::BlockDescriptor{B}, struc::NLPstructure) where B <: m
         # subtags = axsubkeys(struc.vLayout, Hchildren[i])
         DFchildren = axsubBD(struc.vLayout, Hchildren[i])
         # @assert length(subtags) == 2 "Every Hessian block of a MultipleShootingSystemSC except the first and last must have exactly two subblocks (free section and dependent section)"
-        @assert (length(DFchildren) == 2 && blocktypeof(first(DFchildren)) == msDependent && blocktypeof(last(DFchildren)) == msFree) "Every Hessian block of a MultipleShootingSystemSC except the first and last must have exactly two subblocks (msFree and msDependent)"
+        @assert (length(DFchildren) == 2 && blocktypeof(first(DFchildren)) == MSdependent && blocktypeof(last(DFchildren)) == MSfree) "Every Hessian block of a MultipleShootingSystemSC except the first and last must have exactly two subblocks (MSfree and MSdependent)"
 
         # @assert (length(axsubrange(struc.vLayout, MP[first(subtags)])) == length(axsubrange(struc.cLayout, Mchildren[i-1]))) "Output dimension of matching $(i-1) does not match size of associated dependent variable block (block $i)"
         @assert (length(axsubrange(struc.vLayout, first(DFchildren))) == length(axsubrange(struc.cLayout, Mchildren[i-1]))) "Output dimension of matching $(i-1) does not match size of associated dependent variable block (block $i)"
@@ -89,19 +77,19 @@ function assert_layout(BD::BlockDescriptor{B}, struc::NLPstructure) where B <: m
     #e) Last Hessian block may have one dependent or one dependent and one free subblock.
     i = lastindex(Hchildren)
     DFchildren = axsubBD(struc.vLayout, Hchildren[i])
-    @assert (1 <= length(DFchildren) <= 2 && blocktypeof(first(DFchildren)) == msDependent && (length(DFchildren) == 1 || blocktypeof(last(DFchildren)) == msFree)) "Every Hessian block of a MultipleShootingSystemSC except the first and last must have exactly two subblocks (msFree and msDependent)"
+    @assert (1 <= length(DFchildren) <= 2 && blocktypeof(first(DFchildren)) == MSdependent && (length(DFchildren) == 1 || blocktypeof(last(DFchildren)) == MSfree)) "Every Hessian block of a MultipleShootingSystemSC except the first and last must have exactly two subblocks (MSfree and MSdependent)"
     @assert (length(axsubrange(struc.vLayout, first(DFchildren))) == length(axsubrange(struc.cLayout, Mchildren[i-1]))) "Output dimension of matching $(i-1) does not match size of associated dependent variable block (block $i)"
     
     return nothing
 end
 
-function assert_layout(BD::BlockDescriptor{B}, struc::NLPstructure) where B <: msMatchings
-    MP = tagmap(struc)
-    axsubBD(AX, ind) = let __MP = MP
-        axsubkeys(AX, ind) .|> x->__MP[x]
-    end
+# function assert_layout(BD::BlockDescriptor{B}, struc::NLPstructure) where B <: Matchings
+#     MP = tagmap(struc)
+#     axsubBD(AX, ind) = let __MP = MP
+#         axsubkeys(AX, ind) .|> x->__MP[x]
+#     end
     
-    for subBD in axsubBD(struc.cLayout, BD)
-        @assert (blocktypeof(subBD) == msMatching) "Direct subblocks of a msMatchings must be of blocktype msMatching"
-    end
-end
+#     for subBD in axsubBD(struc.cLayout, BD)
+#         @assert (blocktypeof(subBD) == Matching) "Direct subblocks of a Matchings must be of blocktype Matching"
+#     end
+# end

@@ -6,12 +6,12 @@ using .NLPstructures
 # end
 
 function create_vBlocks(struc::NLPstructure)
-    return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, msDependent))
+    return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, nlpMSdependent))
 end
 
 
 function create_condenser_args(struc::NLPstructure, add_dep_bounds = :all) #:none, :inactive, :all
-    Dtargets = filter(x->(blocktypeof(x) <: msSystemSC), struc.vBlocks)
+    Dtargets = filter(x->(blocktypeof(x) <: nlpMultipleShootingDF), struc.vBlocks)
     if length(Dtargets) == 0
         return nothing
     end
@@ -25,6 +25,7 @@ function create_condenser_args(struc::NLPstructure, add_dep_bounds = :all) #:non
     vblocks_args = [(size = length(struc.vLayout[x].idx), dependent = [false]) for x in Dvblocks]
     
     cblocks = Dcblocks .|> x -> cblock(length(struc.cLayout[x].idx))
+    
     hsizes = Dhblocks .|> x-> length(struc.vLayout[x].idx)
     
     targets = condensing_target[]
@@ -34,7 +35,7 @@ function create_condenser_args(struc::NLPstructure, add_dep_bounds = :all) #:non
         i0 = findfirst(Base.Fix2(has_parent,DT), Dvblocks)
         i1 = findlast(Base.Fix2(has_parent,DT), Dvblocks)
         for i in i0:i1
-            vblocks_args[i].dependent[1] = has_parent_type(Dvblocks[i], msDependent)
+            vblocks_args[i].dependent[1] = has_parent_type(Dvblocks[i], nlpMSdependent)
         end
         j0 = findfirst(Base.Fix2(has_parent, DT.attr[:matchings]), Dcblocks)
         j1 = findlast(Base.Fix2(has_parent, DT.attr[:matchings]), Dcblocks)

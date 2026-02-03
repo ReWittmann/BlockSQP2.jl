@@ -175,3 +175,15 @@ end
 function hessBlockOneBasedIndex(NLPstruc::NLPstructure{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     return cumsum(Int64[1, hessBlockSizes(NLPstruc)...])
 end
+
+
+function subBlocks(NLPstruc::NLPstructure{VB,VL,CB,CL}, @nospecialize(blk::BlockDescriptor)) where {VB, VL <: ComponentArrays.Axis, CB, CL <: ComponentArrays.Axis}
+    let __MP = tagmap(NLPstruc)
+        if blk in NLPstruc.vBlocks
+            return axsubkeys(NLPstruc.vLayout, blk) .|> x->__MP[x]
+        elseif blk in NLPstruc.cBlocks
+            return axsubkeys(NLPstruc.cLayout, blk) .|> x->__MP[x]
+        end
+    end
+    error("Block not part of the given NLPstructure")
+end

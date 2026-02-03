@@ -39,4 +39,9 @@ function assert_layout(::BlockDescriptor{B}, ::NLPstructure) where B <: Block
 end
 
 
+function assert_layout(blk::BlockDescriptor{B}, struc::NLPstructure) where B <: Matchings
+    @assert all(blocktypeof(subblk) <: Matching for subblk in subBlocks(struc, blk)) "All direct subblocks of a Matchings block must be of blocktype Matching"
+end
+
+
 tagmap(S::NLPstructure) = Dict((BD.tag => BD) for BD in union(S.vBlocks, S.cBlocks))

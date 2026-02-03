@@ -107,6 +107,11 @@ function SciMLBase.__solve(
     use_sparse_functions = cache.solver_args.use_sparse_functions
     sparsity = cache.solver_args.sparsity
     
+    # if :structure in keys(cache.solver_args)
+    #     NLPstruc = cache.solver_args[:structure]
+        
+    # end
+    
     callback = cache.callback
     
     _loss = function (θ)
