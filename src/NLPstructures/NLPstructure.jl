@@ -26,7 +26,7 @@ struct NLPstructure{VB, VL <: ComponentArrays.AbstractAxis, CB, CL <: ComponentA
     end
 end
 
-function NLPstucture(pre_vL::AbstractVector{TupleBD}, pre_cL::AbstractVector{TupleBD})
+function NLPstructure(pre_vL::AbstractVector{TupleBD}, pre_cL::AbstractVector{TupleBD})
     return NLPstructure((get_BlockDescriptors(pre_vL)...,), to_Axis(pre_vL), (get_BlockDescriptors(pre_cL)...,), to_Axis(pre_cL))
 end
 

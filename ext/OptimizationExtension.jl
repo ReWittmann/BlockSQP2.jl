@@ -191,7 +191,7 @@ function SciMLBase.__solve(
                             nnz = nnz,
                             jac_g_nz = use_sparse_functions ? sparse_jac : blockSQP.fnothing
                             )
-                            
+    
     meth = blockSQP.Solver(sqp_prob, opts, stats)
     
     blockSQP.init!(meth)

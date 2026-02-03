@@ -15,37 +15,39 @@ function NLPstructures.extract_preLayouts(shooting::MultipleShootingLayer,
     pMatchingsL = TupleBD[]
     cMatchingsL = TupleBD[]
     
-    sMatchingsB = BlockDescriptor{msMatchings}(tag = Symbol(name, "_state_matchings"))
-    pMatchingsB = BlockDescriptor{nlpMatchings}(tag = Symbol(name, "_parameter_matchings"))
-    cMatchingsB = BlockDescriptor{nlpMatchings}(tag = Symbol(name, "_control_matchings"))
+    sMatchingsB = BlockDescriptor{msMatchings}(tag = Symbol(name, "_stateMatchings"))
+    pMatchingsB = BlockDescriptor{nlpMatchings}(tag = Symbol(name, "_parameterMatchings"))
+    cMatchingsB = BlockDescriptor{nlpMatchings}(tag = Symbol(name, "_controlMatchings"))
     
     shootingSystemB = BlockDescriptor{msSystemSC}(tag = name, matchings = sMatchingsB)    
     hessL = TupleBD[]
     
-    CRL_matching_layout = shooting(nothing, ps, st).shooting
+    traj, st = shooting(nothing, ps, st)
+    CRL_matching_layout = traj.shooting
     # Assume Matchings to be ordered according to states-parameters-controls as 
     # returned by Corleone.get_shooting_constraints
     
     #First interval: No dependent section, layout according to indentation
-    hessB = BlockDescriptor{nlpHess}(tag = Symbol(name, "_hess_$(1)"), parent = shootingSystemB)
-        freeB = BlockDescriptor{msFree}(tag = Symbol(name, "_free_$(i)"), parent = hessB)
-            statesB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_u0", parent = freeB))
-            paramB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_p_$(i)", parent = freeB))
-            controlB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_control_$(i)", parent = freeB))
+    hessB = BlockDescriptor{nlpHess}(tag = Symbol(name, "_hess_1"), parent = shootingSystemB)
+        freeB = BlockDescriptor{msFree}(tag = Symbol(name, "_free_1"), parent = hessB)
+            statesB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_u0_1"), parent = freeB)
+            paramB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_p_1"), parent = freeB)
+            controlB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_control_1"), parent = freeB)
     #
     p1 = first(ps)
     hessLsub = (hessB, TupleBD[(freeB, [(statesB, length(p1[:u0])), 
                                         (paramB, length(p1[:p])), 
-                                        (controlB, length(p1[:controls]))]
-                              )] )
+                                        (controlB, length(p1[:controls]))] )] )
     push!(hessL, hessLsub)
-                              
-    for (k, interval) in Base.tail(enumerate(keys(ps)))
+    
+    sMatching_input = [freeB]
+    
+    for (k, interval) in Iterators.drop(enumerate(keys(ps)), 1)
         # a) Matching conditions to previous shooting interval
-        sMatchingB = BlockDescriptor{msMatching}(tag = Symbol(name, "_state_matching_$(k)"), parent = sMatchingsB, input = [freeB])
-        pMatchingB = BlockDescriptor{nlpMatching}(tag = Symbol(name, "_paramter_matching_$(k)"), parent = pMatchingsB, input = [paramB])
+        sMatchingB = BlockDescriptor{msMatching}(tag = Symbol(name, "_stateMatching_$(k)"), parent = sMatchingsB, input = sMatching_input)
+        pMatchingB = BlockDescriptor{nlpMatching}(tag = Symbol(name, "_paramterMatching_$(k)"), parent = pMatchingsB, input = [paramB])
         # Currently, control matchings are not fully supported as they may be partial
-        cMatchingB = BlockDescriptor{nlpMatching}(tag = Symbol(name, "_control_matching_$(k)"), parent = cMatchingsB)
+        cMatchingB = BlockDescriptor{nlpMatching}(tag = Symbol(name, "_controlMatching_$(k)"), parent = cMatchingsB)
         
         CRL_mtc_k = CRL_matching_layout[interval]
         push!(sMatchingsL, (sMatchingB, length(CRL_mtc_k[:u0])))
@@ -53,18 +55,19 @@ function NLPstructures.extract_preLayouts(shooting::MultipleShootingLayer,
         push!(cMatchingsL, (cMatchingB, length(CRL_mtc_k[:controls])))
         
         #b) Stage-local variables
-        hessB = BlockDescriptor{nlpHess}(tag = Symbol(name, "_hess_$(k)"), parent = shootingB)        
-            depB = BlockDescriptor{nlpDependent}(tag = Symbol(name, "_dep_$(k)"), parent = hessB, matching = sMatchingB)
+        hessB = BlockDescriptor{nlpHess}(tag = Symbol(name, "_hess_$(k)"), parent = shootingSystemB)        
+            depB = BlockDescriptor{msDependent}(tag = Symbol(name, "_dep_$(k)"), parent = hessB, matching = sMatchingB)
                 statesB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_states_$(k)"), parent = depB)
-            freeB = BlockDescriptor{nlpFree}(tag = Symbol(name, "_free_$(k)"), parent = hessB)
+            freeB = BlockDescriptor{msFree}(tag = Symbol(name, "_free_$(k)"), parent = hessB)
                 paramB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_param_$(k)"), parent = freeB, matching = pMatchingB)
-                controlB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_control_$(k)", parent = freeB))
+                controlB = BlockDescriptor{nlpVariables}(tag = Symbol(name, "_control_$(k)"), parent = freeB)
         
         ps_k = ps[interval]
-        paramcontrolL = TupleBD[(paramB, length(ps_k[:p])), (controlB, length(ps_k[:controls]))]
         statesL = TupleBD[(statesB, length(ps_k[:u0]))]
-        hessLsub = (hessB, TupleBD[(freeB, paramcontrolL), (depB, statesL)])
+        paramcontrolL = TupleBD[(paramB, length(ps_k[:p])), (controlB, length(ps_k[:controls]))]
+        hessLsub = (hessB, TupleBD[(depB, statesL), (freeB, paramcontrolL)])
         push!(hessL, hessLsub)
+        sMatching_input = [depB, freeB]
     end
     shootingSystemL = TupleBD[(shootingSystemB, hessL)]
     matchingsL = TupleBD[(sMatchingsB, sMatchingsL), (pMatchingsB, pMatchingsL), (cMatchingsB, cMatchingsL)]
