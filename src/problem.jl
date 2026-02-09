@@ -57,6 +57,7 @@ mutable struct blockSQPProblem
                         if blockIdx[1] == 1
                             blockIdx = copy(blockIdx) .-1
                         end
+                        @assert blockIdx[1] == 0 && blockIdx[end] == length(x0)
                         new(Cint(length(lb_var)), Cint(length(lb_con)), Cint(nnz), [Cint(x) for x in blockIdx], 
                             vblocks, condenser,
                             [Cdouble(x) for x in lb_var], [Cdouble(x) for x in ub_var], [Cdouble(x) for x in lb_con], [Cdouble(x) for x in ub_con], Cdouble(lb_obj), Cdouble(ub_obj),
