@@ -80,24 +80,14 @@ function blockDescriptors(arg::Vector{Tuple{B, T}}) where {B <: AbstractBlockDes
     return arg .|> blockDescriptors |> splat(vcat)
 end
 
-    
-# function Base.getindex(collection::T, ind::B) where {B <: AbstractBlockDescriptor, T <: ComponentArrays.ComponentArray}
-#     return !isnothing(ind.parent) ? collection[ind.parent][ind.tag] : collection[ind.tag]
-# end
 function Base.getindex(collection::T, @nospecialize(ind::BlockDescriptor)) where {T <: ComponentArrays.ComponentArray}
     return !isnothing(ind.parent) ? collection[ind.parent][ind.tag] : collection[ind.tag]
 end
 
-# function Base.getindex(ax::AX, ind::B) where {AX <: ComponentArrays.AbstractAxis, B <: AbstractBlockDescriptor}
-#     return !isnothing(ind.parent) ? ax[ind.parent].ax[ind.tag] : ax[ind.tag]
-# end
 function Base.getindex(ax::AX, @nospecialize(ind::BlockDescriptor)) where {AX <: ComponentArrays.AbstractAxis}
     return !isnothing(ind.parent) ? ax[ind.parent].ax[ind.tag] : ax[ind.tag]
 end
 
-# function axsubrange(ax::AX, ind::B)  where {AX <: ComponentArrays.AbstractAxis, B <: AbstractBlockDescriptor}
-#     return !isnothing(ind.parent) ? axsubrange(ax, ind.parent)[ax[ind].idx] : ax[ind].idx
-# end
 function axsubrange(ax::AX, @nospecialize(ind::BlockDescriptor))  where {AX <: ComponentArrays.AbstractAxis}
     return !isnothing(ind.parent) ? axsubrange(ax, ind.parent)[ax[ind].idx] : ax[ind].idx
 end
@@ -106,9 +96,6 @@ function axsublength(ax::AX, @nospecialize(blk::BlockDescriptor)) where {AX <: C
     return length(axsubrange(ax, blk))
 end
 
-# function Base.view(collection::T, ind::B) where {B <: AbstractBlockDescriptor, T <: ComponentArrays.ComponentArray}
-#     return !isnothing(ind.parent) ? view(view(collection, ind.parent), ind.tag) : view(collection, ind.tag)
-# end
 function Base.view(collection::T, @nospecialize(ind::BlockDescriptor)) where {T <: ComponentArrays.ComponentArray}
     return !isnothing(ind.parent) ? view(view(collection, ind.parent), ind.tag) : view(collection, ind.tag)
 end
@@ -128,7 +115,6 @@ end
 function simple_cBlocks(layout::NLPlayout{VB,VL,CB,CL}) where {VB, VL, CB, CL <: ComponentArrays.Axis}
     return layout.cBlocks |> Base.Fix1(filter, x-> (typeof(layout.cLayout[x].ax) <: Shaped1DAxis)) |> collect |> (arr -> sort(arr, by = (x -> first(axsubrange(layout.cLayout, x)))))
 end
-
 
 function has_parent(@nospecialize(b::BlockDescriptor), @nospecialize(p::BlockDescriptor))
     return !isnothing(b.parent) && (b.parent == p || has_parent(b.parent, p))
@@ -156,7 +142,6 @@ end
 function hessBlockSizes(layout::NLPlayout{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     hBlocks = hessBlocks(layout)
     length(hBlocks) == 0 && return [axlength(layout.vLayout)]
-    # return hBlocks .|> Base.Fix1(getindex, layout.vLayout) .|> Base.Fix2(getfield, :idx) |> collect |> sort! .|> length
     return hBlocks .|> Base.Fix1(axsublength, layout.vLayout)
 end
 

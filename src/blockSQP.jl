@@ -1,5 +1,5 @@
 module blockSQP
-    using EnumX, SparseArrays#, Symbolics
+    using EnumX, SparseArrays
     
 	import Base.setproperty!, Base.getproperty
     
@@ -21,7 +21,6 @@ module blockSQP
     const libblockSQP = Ref{Ptr{Nothing}}(Ptr{Nothing}())
     function __init__()
         libblockSQP[] = try
-            # print("Attempting to load blocksqp from ", joinpath(Base.@__DIR__, "..", "bin", "libblockSQP_jl"), "\n")
             Base.Libc.Libdl.dlopen(joinpath(Base.@__DIR__, "..", "bin", "libblockSQP_jl"))
         catch blockSQP_load_error
             @info "Could not load blockSQP dynamic library from bin folder." blockSQP_load_error "\nLoading blockSQP_jll instead\n"

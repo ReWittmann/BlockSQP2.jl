@@ -1,11 +1,12 @@
 module SymbolicsHessUtilities
 
-using SparseArrays
-using Symbolics
-using blockSQP
-
 # Some helper functions to obtain the block structure as needed by blockSQP,
-# placed into an extension to avoid the heavy Symbolics dependency.
+# placed into an extension to avoid the heavy Symbolics dependency. 
+using Symbolics
+using OptimizationBase, OptimizationBase.SciMLBase
+
+using SparseArrays
+using blockSQP
 
 function blockSQP.compute_hessian_blocks(A::AbstractMatrix)
     _A = SparseArrays.SparseMatrixCSC(A)
@@ -50,5 +51,18 @@ function blockSQP.compute_hessian_blocks(f, g, num_x::Integer,
     display(sparse_hess)
     compute_hessian_blocks(sparse_hess)
 end
+
+function blockSQP.compute_hessian_blocks(prob::SciMLBase.OptimizationProblem)
+    num_x = length(prob.u0)
+    num_cons = prob.ucons === nothing ? 0 : length(prob.ucons)
+    function cons_ip(cons,x)
+        let _p = prob.p
+            prob.f.cons(cons, x, _p)
+            return cons
+        end
+    end
+    compute_hessian_blocks(prob.f.f, cons_ip, num_x, num_cons; parameters=prob.p)
+end
+
 
 end #SymbolicsHelperUtilities

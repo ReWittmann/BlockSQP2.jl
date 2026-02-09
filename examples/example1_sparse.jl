@@ -36,7 +36,6 @@ prob = blockSQP.blockSQPProblem(f,g, grad_f, jac_g,
 blockSQP.make_sparse!(prob, Int32(nnz), jac_g_nz, jac_g_row, jac_g_colind)
 
 
-QPopts = qpOASES_options(sparsityLevel = 2)
 opts = blockSQPOptions(
                        maxiters = 100,
                        opt_tol = 1.0e-12,

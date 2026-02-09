@@ -168,7 +168,7 @@ end
 
 function get_itCount(sol::Solver)
     BSQP = libblockSQP[]
-    return ccall(@dlsym(BSQP, "SQPstats_get_itCount"), Cint, (Ptr{Cvoid},), sol.SQPstats_obj)
+    return ccall(@dlsym(BSQP, "SQPstats_get_itCount"), Cint, (Ptr{Cvoid},), sol.Jul_Stats.obj)
 end
 
 #Allocate space for solution on julia side and call C method to fill it

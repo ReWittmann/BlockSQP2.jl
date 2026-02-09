@@ -103,7 +103,7 @@ mutable struct Condenser
                             new_xi_rest, new_lambda_rest
                             )
         
-        function Condenser_finalizer(J_cond::Condenser)
+        function Condenser_finalizer!(J_cond::Condenser)
             BSQP = libblockSQP[]
             ccall(@dlsym(BSQP, "delete_Matrix"), Cvoid, (Ptr{Cvoid},), J_cond.Matrix_lambda_rest)
             ccall(@dlsym(BSQP, "delete_Matrix"), Cvoid, (Ptr{Cvoid},), J_cond.Matrix_xi_rest)
@@ -133,7 +133,7 @@ mutable struct Condenser
             ccall(@dlsym(BSQP, "delete_cblock_array"), Cvoid, (Ptr{Cvoid},), J_cond.cblock_array_obj)
             ccall(@dlsym(BSQP, "delete_vblock_array"), Cvoid, (Ptr{Cvoid},), J_cond.vblock_array_obj)
         end
-        finalizer(Condenser_finalizer, new_Condenser)
+        finalizer(Condenser_finalizer!, new_Condenser)
     end
     
     function Condenser(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}, arg_dep_bounds::Symbol) where INT_T <: Integer

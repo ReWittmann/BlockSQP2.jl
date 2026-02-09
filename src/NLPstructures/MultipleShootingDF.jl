@@ -30,12 +30,6 @@ abstract type MSfree <: Variables end
 abstract type MSdependent <: Variables end
 
 
-
-# abstract type ParameterMatching <: Matching end
-# abstract type ParameterMatchings <: Matchings end
-# abstract type ControlMatchings <: Matchings end
-
-
 function BlockDescriptor{arg_T}(args...; kwargs...) where arg_T <: MultipleShootingDF
     @assert :matchings in keys(kwargs) && blocktypeof(kwargs[:matchings]) <: Matchings
     return BlockDescriptor{Btype{MultipleShootingDF}}(args...; kwargs...)

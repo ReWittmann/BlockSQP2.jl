@@ -2,7 +2,6 @@ module OptimizationExtension
 
 using blockSQP, blockSQP.SparseArrays, blockSQP.NLPstructures
 using OptimizationBase, OptimizationBase.SciMLBase
-using Symbolics
 
 SciMLBase.allowsbounds(::blockSQPOptimizer) = true
 SciMLBase.allowsconstraints(::blockSQPOptimizer) = true
@@ -94,7 +93,9 @@ function SciMLBase.__solve(
         _layout = cache.solver_args.layout
         _blockIdx = hessBlockIndexZeroBased(_layout)
         _vblocks = create_vblocks(_layer)
-        _condenser = blockSQP.Condenser(_layout)
+        
+        #Deactivate this for now, requiring explicit passing of a condenser.
+        # _condenser = blockSQP.Condenser(_layout)
     end
     if !isnothing(cache.solver_args.condenser)
         _condenser = cache.solver_args.condenser
@@ -179,12 +180,12 @@ function SciMLBase.__solve(
     sqp_prob = blockSQP.blockSQPProblem(_loss, _cons, _g, _jac_cons,
                             _lb, _ub, _lb_cons, _ub_cons,
                             _u0, _lambda_0; 
-                            blockIdx = _blockidx,
+                            blockIdx = _blockIdx,
                             vblocks = _vblocks,
                             condenser = _condenser,
                             jac_g_row = jac_g_row, jac_g_colind = jac_g_col,
                             nnz = nnz,
-                            jac_g_nz = use_sparse_functions ? sparse_jac : blockSQP.fnothing
+                            jac_g_nz = opts.sparse ? sparse_jac : blockSQP.fnothing
                             )
     
     meth = blockSQP.Solver(sqp_prob, opts, stats)

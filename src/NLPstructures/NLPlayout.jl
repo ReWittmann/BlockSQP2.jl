@@ -22,7 +22,8 @@ struct NLPlayout{VB, VL <: ComponentArrays.AbstractAxis, CB, CL <: ComponentArra
         for vBlock in layout.vBlocks
             assert_layout(vBlock, layout)
         end
-        #If HessBlocks are present, must cover the full range exactly.
+        
+        #If Hess-blocks are present, they must cover the full range exactly.
         hBlocks = hessBlocks(layout)
         hlength = sum(hBlocks .|> Base.Fix1(axsubrange, layout.vLayout) .|> length)
         @assert hlength in (0, axlength(layout.vLayout))
@@ -43,10 +44,17 @@ function assert_layout(::BlockDescriptor{B}, ::NLPlayout) where B <: Block
     return nothing
 end
 
-
 function assert_layout(blk::BlockDescriptor{B}, layout::NLPlayout) where B <: Matchings
     @assert all(blocktypeof(subblk) <: Matching for subblk in subBlocks(layout, blk)) "All direct subblocks of a Matchings block must be of blocktype Matching"
 end
 
 
 tagmap(layout::NLPlayout) = Dict((BD.tag => BD) for BD in union(layout.vBlocks, layout.cBlocks))
+
+function Base.show(io::IO, ::MIME"text/plain", layout::NLPlayout)
+    vtags = [blk.tag for blk in layout.vBlocks]
+    ctags = [blk.tag for blk in layout.cBlocks]
+    print(io, "NLPlayout with vBlocks ", vtags, " and ctags ", ctags)
+end
+
+Base.show(io::IO, layout::NLPlayout) = Base.show(io, MIME"text/plain"(), B)

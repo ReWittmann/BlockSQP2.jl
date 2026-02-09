@@ -1,6 +1,6 @@
 using blockSQP
 using blockSQP.NLPstructures
-
+using Test
 const lotka_params = Dict{Symbol, Float64}(
     :c0 => 0.4,
     :c1 => 0.2,
@@ -124,10 +124,15 @@ cBlocks = blockDescriptors(cPreLayout)
 
 layout = NLPlayout((vBlocks...,), vLayout, (cBlocks...,), cLayout)
 nVar = axlength(vLayout)
+nCon = axlength(cLayout)
+
+@test nVar == N*(nu + nx)
+@test nCon == N*nx
+
 lotka_MS(x,u) = ODEsol_multi(lotka_rhs, lotka_quad, x, u, lotka_params[:t1] - lotka_params[:t0], 2)
 stateidx = splat(vcat)(states .|> st->collect(axsubrange(vLayout, st)))
 controlidx = splat(vcat)(controls .|> ctrl->collect(axsubrange(vLayout, ctrl)))
-
+@test sort(vcat(stateidx, controlidx)) == Base.OneTo(nVar)
 
 function objective(arg_x)
     let _sidx = stateidx, _cidx = controlidx
@@ -152,11 +157,11 @@ function shooting_constraints(arg_x)
 end
 
 x_init = lotka_vparams[:x_init]
-x_start = ComponentArray(zeros(axlength(vLayout)), vLayout)
+x_start = ComponentArray(zeros(nVar), vLayout)
 # u_start = zeros(1,N)
 
-lb_var = ComponentArray(repeat([0.], axlength(vLayout)), vLayout)
-ub_var = ComponentArray(repeat([Inf], axlength(vLayout)), vLayout)
+lb_var = ComponentArray(repeat([0.], nVar), vLayout)
+ub_var = ComponentArray(repeat([Inf], nVar), vLayout)
 for state in states
     view(x_start, state)[:] = x_init
 end
@@ -164,7 +169,7 @@ for control in controls
     view(ub_var, control)[:] .= 1
 end
 
-lb_con, ub_con = zeros(axlength(cLayout)), zeros(axlength(cLayout))
+lb_con, ub_con = zeros(nCon), zeros(nCon)
 
 
 using ForwardDiff
@@ -185,7 +190,6 @@ sparse_forward_backend = AutoSparse(
     coloring_algorithm = GreedyColoringAlgorithm()
 )
 
-
 using Optimization
 using OptimizationMOI
 using Ipopt
@@ -200,7 +204,7 @@ Opt_prob = OptimizationProblem(
     Opt_f, collect(x_start), SciMLBase.NullParameters(); lb = collect(lb_var), ub = collect(ub_var), lcons = lb_con, ucons = ub_con
 )
 
-print("Note: We are using dense Jacobians for Ipopt, so the runtime comparison will be off.\n")
+
 Ipoptsol = solve(Opt_prob, Ipopt.Optimizer(),
      tol = 1e-6,
      constr_viol_tol = 1e-6,
@@ -217,45 +221,70 @@ jac_gNZ(x) = jacobian(g, sparse_forward_backend, x).nzval
 
 condenser = blockSQP.Condenser(layout)
 
-("BlockSQP allows passing sparse Jacobians, so it will have a runtime advantage.\n")
-prob = blockSQP.blockSQPProblem(
-    f, g, grad_f, blockSQP.fnothing,
-    collect(lb_var), collect(ub_var), lb_con, ub_con,
-    collect(x_start), zeros(NLPstructures.axlength(vLayout) + NLPstructures.axlength(cLayout));
-    blockIdx = hessBlockIndexZeroBased(layout), jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = blockSQP.create_vblocks(layout), condenser = condenser
-)
-opts = blockSQP.sparse_options()
-opts.max_extra_steps = 0
-opts.automatic_scaling = true
-opts.max_conv_QPs = 4
-opts.conv_strategy = 2
+_blockIdx = hessBlockIndexZeroBased(layout)
+@test _blockIdx[0] == 1.0
+@test _blockIdx[1] == nu
+@test _blockIdx[2] == 2*nu + nx
+@test _blockIdx[end] == nVar
+
+
 stats = blockSQP.SQPstats("./")
 
-meth = blockSQP.Solver(prob, opts, stats)
+prob_default = blockSQP.blockSQPProblem(
+    f, g, grad_f, blockSQP.fnothing,
+    collect(lb_var), collect(ub_var), lb_con, ub_con,
+    collect(x_start), zeros(nVar + nCon);
+    blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
+    nnz = length(ROW), vblocks = nothing, condenser = nothing
+)
+prob_vblocks = blockSQP.blockSQPProblem(
+    f, g, grad_f, blockSQP.fnothing,
+    collect(lb_var), collect(ub_var), lb_con, ub_con,
+    collect(x_start), zeros(nVar + nCon);
+    blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
+    nnz = length(ROW), vblocks = blockSQP.create_vblocks(layout), condenser = nothing
+)
+prob_condensing = blockSQP.blockSQPProblem(
+    f, g, grad_f, blockSQP.fnothing,
+    collect(lb_var), collect(ub_var), lb_con, ub_con,
+    collect(x_start), zeros(nVar + nCon);
+    blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
+    nnz = length(ROW), vblocks = blockSQP.create_vblocks(layout), condenser = condenser
+)
 
+opts = blockSQP.sparse_options()
+meth = blockSQP.Solver(prob_default, opts, stats)
 blockSQP.init!(meth)
 blockSQP.run!(meth, 200, 0)
 blockSQP.finish!(meth)
-
-blockSQP.get_primal_solution(meth)
 x_opt = blockSQP.get_primal_solution(meth)
 x_opt = ComponentArray(x_opt, layout.vLayout)
+@test isapprox(f(x_opt), 1.344408; atol = 1e-5)
+@test blockSQP.get_itCount(meth) < 30
 
-using CairoMakie
 
-opt_x = hcat(x_init, (states .|> st -> x_opt[st]) |> splat(hcat))
-opt_u = (controls .|> ctrl -> x_opt[ctrl]) |> splat(hcat)
+opts = blockSQP.sparse_options()
+opts.automatic_scaling = true
+opts_.max_conv_QPs = 4
+opts.conv_strategy = 2
+meth = blockSQP.Solver(prob_vblocks, opts, stats)
+blockSQP.init!(meth)
+blockSQP.run!(meth, 200, 0)
+blockSQP.finish!(meth)
+x_opt = blockSQP.get_primal_solution(meth)
+x_opt = ComponentArray(x_opt, layout.vLayout)
+@test isapprox(f(x_opt), 1.344408; atol = 1e-5)
+@test blockSQP.get_itCount(meth) < 30
 
-fig, _ = Figure(), nothing
-ax = CairoMakie.Axis(fig[1,1])
-Tgrid = range(0,12,N+1)
-lines!(Tgrid, opt_x[1,:], label = "x₁")
-lines!(Tgrid, opt_x[2,:], label = "x₂")
-stairs!(Tgrid[1:end-1], opt_u[1,:], label = "u", color = :red3)
-fig[1, 2] = Legend(fig, ax, framevisible = false)
-display(fig)
 
+meth = blockSQP.Solver(prob_condensing, opts, stats)
+blockSQP.init!(meth)
+blockSQP.run!(meth, 200, 0)
+blockSQP.finish!(meth)
+x_opt = blockSQP.get_primal_solution(meth)
+x_opt = ComponentArray(x_opt, layout.vLayout)
+@test isapprox(f(x_opt), 1.344408; atol = 1e-5)
+@test blockSQP.get_itCount(meth) < 30
 
 
 

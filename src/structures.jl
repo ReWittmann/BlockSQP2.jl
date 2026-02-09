@@ -45,4 +45,7 @@ function create_condenser_args(struc::NLPlayout, add_dep_bounds = :all) #:none, 
     return vblocks, cblocks, hsizes, targets, add_dep_bounds
 end
 
-Condenser(struc::NLPlayout, add_dep_bounds = :all) = Condenser(create_condenser_args(struc, add_dep_bounds)...)
+function Condenser(struc::NLPlayout, add_dep_bounds = :all)
+    @warn "Creating a Condenser from an NLPlayout is highly experimental for now"
+    return Condenser(create_condenser_args(struc, add_dep_bounds)...)
+end
