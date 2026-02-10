@@ -20,11 +20,14 @@ function SciMLBase.__init(
             progress = false, maxiters=nothing,
             options::blockSQP.Options=blockSQPoptions(),
             blockIdx::Union{Vector{<:Integer}, Nothing} = nothing,
-            vblocks::Union{Vector{blockSQP.vblock}, Nothing} = nothing,
+            vblocks::Union{Vector{blockSQP.vblock}, Nothing} = blockSQP.vblock[],
             condenser::Union{blockSQP.Condenser, Nothing} = nothing,
             layout::Union{NLPstructures.NLPlayout, Nothing} = nothing,
             kwargs...
             )
+    if isnothing(vblocks)
+        vblocks = blockSQP.vblock[]
+    end
     return OptimizationCache(prob, opt; 
         callback = callback, progress = progress, maxiters = maxiters,
         options=options, blockIdx = blockIdx, vblocks = vblocks, layout = layout,
@@ -100,7 +103,7 @@ function SciMLBase.__solve(
     if !isnothing(cache.solver_args.condenser)
         _condenser = cache.solver_args.condenser
     end
-    if !isnothing(cache.solver_args.vblocks)
+    if length(cache.solver_args.vblocks) > 0
         _vblocks = cache.solver_args.vblocks
     end
     if !isnothing(cache.solver_args.blockIdx)
