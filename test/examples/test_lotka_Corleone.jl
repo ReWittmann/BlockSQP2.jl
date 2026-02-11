@@ -5,14 +5,15 @@ using ComponentArrays
 using LuxCore
 using Random
 
-using CairoMakie
 using Optimization
 using OptimizationMOI
 
+using Test
+
 function lotka_dynamics(u, p, t)
     return [
-        u[1] - prod(u[1:2]) - 0.4 * p[1] * u[1];
-        -u[2] + prod(u[1:2]) - 0.2 * p[1] * u[2];
+        u[1] - p[2] * prod(u[1:2]) - 0.4 * p[1] * u[1];
+        -u[2] + p[3] * prod(u[1:2]) - 0.2 * p[1] * u[2];
         (u[1] - 1.0)^2 + (u[2] - 1.0)^2
     ]
 end
@@ -81,47 +82,52 @@ optprob = OptimizationProblem(
     optfun, collect(msp), lb = collect(ms_lb), ub = collect(ms_ub), lcons = zero(matching), ucons = zero(matching)
 )
 
-using Ipopt
-uopt = solve(
-    optprob, Ipopt.Optimizer(),
-    tol = 1.0e-6,
-    hessian_approximation = "limited-memory",
-    max_iter = 300
-)
 
-blocks = Corleone.get_block_structure(mslayer)
+blockIdx_CRL = Corleone.get_block_structure(mslayer)
 
 using blockSQP
-opt_BSQP_sparse = blockSQP.sparse_options()
-# Activate adaptive termination
-opt_BSQP_sparse.enable_premature_termination = true
-opt_BSQP_sparse.max_extra_steps = 1
-opt_BSQP_sparse.par_QPs = true
-opt_BSQP_sparse.automatic_scaling = true
-
 using blockSQP.NLPstructures
 nlplayout = NLPstructures.get_layout(mslayer, msps, msst)
 
 blockIdx = hessBlockIndexZeroBased(nlplayout)
-vblocks = create_vblocks(nlplayout)
-condenser = blockSQP.Condenser(nlplayout)
-uopt = solve(
+@test blockIdx == blockIdx_CRL
+
+
+opts = blockSQP.sparse_options()
+uopt_default = solve(
     optprob, blockSQP.Optimizer(),
     opttol = 1.0e-6,
-    options = opt_BSQP_sparse,
+    options = opts,
     blockIdx = blockIdx,
-    vblocks = vblocks,
-    # condenser = condenser, #Unfortunately, we dont have a suitable QP solver that really benefits from condensing yet.
     maxiters = 300,
 )
+@test SciMLBase.successful_retcode(uopt_default)
 
-mssol, _ = mslayer(nothing, uopt + zero(msp), msst)
+opts.automatic_scaling = true
+opts.conv_strategy = 2
+vblocks = create_vblocks(nlplayout)
+uopt_structure = solve(
+    optprob, blockSQP.Optimizer(),
+    opttol = 1.0e-6,
+    options = opts,
+    blockIdx = blockIdx,
+    vblocks = vblocks,
+    maxiters = 300,
+)
+@test SciMLBase.successful_retcode(uopt_structure)
 
-f = Figure()
-ax = CairoMakie.Axis(f[1, 1])
-scatterlines!(ax, mssol, vars = [:x₁, :x₂])
-f[1, 2] = Legend(f, ax, "States", framevisible = false)
-ax1 = CairoMakie.Axis(f[2, 1])
-stairs!(ax1, mssol, vars = [:fishing])
-f[2, 2] = Legend(f, ax1, "Controls", framevisible = false)
-display(f)
+condenser = blockSQP.Condenser(nlplayout)
+uopt_condensing = solve(
+    optprob, blockSQP.Optimizer(),
+    opttol = 1.0e-6,
+    options = opts,
+    blockIdx = blockIdx,
+    vblocks = vblocks,
+    condenser = condenser,
+    maxiters = 300,
+)
+@test SciMLBase.successful_retcode(uopt_condensing)
+
+
+@test all(isapprox(s.objective, 1.3443364833694484; atol = 1e-5) for s in (uopt_default, uopt_structure, uopt_condensing))
+@test all(isapprox(opt_f(s), 1.3443364833694484; atol = 1e-5) for s in (uopt_default, uopt_structure, uopt_condensing))

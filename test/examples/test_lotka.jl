@@ -263,7 +263,6 @@ x_opt = ComponentArray(x_opt, layout.vLayout)
 @test blockSQP.get_itCount(meth) < 30
 
 
-opts = blockSQP.sparse_options()
 opts.automatic_scaling = true
 opts.max_conv_QPs = 4
 opts.conv_strategy = 2

@@ -144,7 +144,10 @@ using LinearAlgebra
         blocks_h3 = blockSQP.compute_hessian_blocks(H3)
         @test blocks_h3 == [0,4]
     end
-    @safetestset "Lotka Volterra Fishing" begin
+    @safetestset "Lotka Volterra manual MS" begin
         include("examples/test_lotka.jl")
+    end
+    @safetestset "Lotka Volterra Corleone MS" begin
+        include("examples/test_lotka_Corleone.jl")
     end
 end
