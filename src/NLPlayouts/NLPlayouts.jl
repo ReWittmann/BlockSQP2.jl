@@ -1,4 +1,4 @@
-module NLPstructures
+module NLPlayouts
 using Reexport
 @reexport using ComponentArrays
 using DocStringExtensions

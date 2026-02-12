@@ -17,7 +17,7 @@ OptimizationBase = "bca83a33-5cc9-4baa-983d-23429ab6bcbb"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [extensions]
-NLPstructuresCorleone = ["LuxCore", "Corleone"]
+NLPlayoutsCorleone = ["LuxCore", "Corleone"]
 OptimizationExtension = "OptimizationBase"
 SymbolicsHessUtilities = ["OptimizationBase", "Symbolics"]
 

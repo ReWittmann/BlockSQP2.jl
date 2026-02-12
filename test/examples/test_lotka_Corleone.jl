@@ -86,8 +86,8 @@ optprob = OptimizationProblem(
 blockIdx_CRL = Corleone.get_block_structure(mslayer)
 
 using blockSQP
-using blockSQP.NLPstructures
-nlplayout = NLPstructures.get_layout(mslayer, msps, msst)
+using blockSQP.NLPlayouts: get_layout, hessBlockIndexZeroBased
+nlplayout = get_layout(mslayer, msps, msst)
 
 blockIdx = hessBlockIndexZeroBased(nlplayout)
 @test blockIdx == blockIdx_CRL

@@ -1,5 +1,5 @@
 using blockSQP
-using blockSQP.NLPstructures
+using blockSQP.NLPlayouts
 
 const lotka_params = Dict{Symbol, Float64}(
     :c0 => 0.4,
@@ -202,8 +202,8 @@ Opt_prob = OptimizationProblem(
 
 print("Note: We are using dense Jacobians for Ipopt, so the runtime comparison will be off.\n")
 Ipoptsol = solve(Opt_prob, Ipopt.Optimizer(),
-     tol = 1e-6,
-     constr_viol_tol = 1e-6,
+     tol = 1e-5,
+     constr_viol_tol = 1e-5,
      hessian_approximation = "limited-memory",
      max_iter = 300, # 165
 )
@@ -222,7 +222,7 @@ condenser = blockSQP.Condenser(layout)
 prob = blockSQP.Problem(
     f, g, grad_f, blockSQP.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
-    collect(x_start), zeros(NLPstructures.axlength(vLayout) + NLPstructures.axlength(cLayout));
+    collect(x_start), zeros(axlength(vLayout) + axlength(cLayout));
     blockIdx = hessBlockIndexZeroBased(layout), jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
     nnz = length(ROW), vblocks = blockSQP.create_vblocks(layout), condenser = condenser
 )

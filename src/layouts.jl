@@ -1,7 +1,7 @@
-using .NLPstructures
+using .NLPlayouts
 
 """
-Create vblocks (variable block information) for blockSQP, not to be confused with NLPlayout.vBlocks, NLPstructures.simple_vBlockes etc.
+Create vblocks (variable block information) for blockSQP, not to be confused with NLPlayout.vBlocks, NLPlayouts.simple_vBlockes etc.
 """
 function create_vblocks(struc::NLPlayout)
     return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, nlpMSdependent))

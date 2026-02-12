@@ -1,6 +1,6 @@
 module OptimizationExtension
 
-using blockSQP, blockSQP.SparseArrays, blockSQP.NLPstructures
+using blockSQP, blockSQP.SparseArrays, blockSQP.NLPlayouts
 using OptimizationBase, OptimizationBase.SciMLBase
 
 SciMLBase.allowsbounds(::blockSQPOptimizer) = true
@@ -22,7 +22,7 @@ function SciMLBase.__init(
             blockIdx::Union{Vector{<:Integer}, Nothing} = nothing,
             vblocks::Union{Vector{blockSQP.vblock}, Nothing} = blockSQP.vblock[],
             condenser::Union{blockSQP.Condenser, Nothing} = nothing,
-            layout::Union{NLPstructures.NLPlayout, Nothing} = nothing,
+            layout::Union{NLPlayouts.NLPlayout, Nothing} = nothing,
             kwargs...
             )
     if isnothing(vblocks)

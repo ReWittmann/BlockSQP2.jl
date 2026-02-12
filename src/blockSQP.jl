@@ -88,11 +88,11 @@ module blockSQP
     export BlockSQPSolver
     export init!, run!, finish!, get_itCount, get_primal_solution, get_dual_solution, get_dual_solution_full
 
-    include("NLPstructures/NLPstructures.jl")
+    include("NLPlayouts/NLPlayouts.jl")
     
-    include("structures.jl")
+    include("layouts.jl")
     export create_vblocks, create_condenser_args
     
-    #ComponentArrays is used by NLPstructures submodule, so we always use ComponentArrays for now.
+    #ComponentArrays is used by NLPlayouts submodule, so we always use ComponentArrays for now.
     include("ComponentArraysExtension.jl")
 end # module blockSQP

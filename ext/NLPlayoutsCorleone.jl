@@ -1,13 +1,13 @@
-module NLPstructuresCorleone
+module NLPlayoutsCorleone
 using LuxCore
 using Corleone
-using blockSQP.NLPstructures
+using blockSQP.NLPlayouts
 
-@info "Loading Corleone.jl extension for blockSQP.NLPstructures..." 
+@info "Loading Corleone.jl extension for blockSQP.NLPlayouts..." 
 
 #Prefixes: s - states, p - paramters, c - controls
 #Suffixes: B - BlockDescriptor, L - Layout (::TupleBD[]), SUB - Sublayout (::TupleBD)
-function NLPstructures.get_preLayouts(shooting::SingleShootingLayer,
+function NLPlayouts.get_preLayouts(shooting::SingleShootingLayer,
                     ps=LuxCore.initialparameters(Random.default_rng(), shooting),
                     st=LuxCore.initialstates(Random.default_rng(), shooting);
                     name = Symbol(gensym(), :_SingleShooting))
@@ -21,7 +21,7 @@ function NLPstructures.get_preLayouts(shooting::SingleShootingLayer,
 end
 
 
-function NLPstructures.get_preLayouts(shooting::MultipleShootingLayer,
+function NLPlayouts.get_preLayouts(shooting::MultipleShootingLayer,
                     ps=LuxCore.initialparameters(Random.default_rng(), shooting),
                     st=LuxCore.initialstates(Random.default_rng(), shooting);
                     name = Symbol(gensym(), :_MultipleShooting))
@@ -91,4 +91,4 @@ end
 
 
 
-end #NLPstructuresCorleone
+end #NLPlayoutsCorleone

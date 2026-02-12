@@ -1,5 +1,5 @@
 using blockSQP
-using blockSQP.NLPstructures
+using blockSQP.NLPlayouts
 
 
 matchings = BlockDescriptor{nlpMatchings}(tag = :matchings)

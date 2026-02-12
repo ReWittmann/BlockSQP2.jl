@@ -1,5 +1,5 @@
 using blockSQP
-using blockSQP.NLPstructures
+using blockSQP.NLPlayouts
 using Test
 const lotka_params = Dict{Symbol, Float64}(
     :c0 => 0.4,
