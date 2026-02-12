@@ -19,9 +19,9 @@ ub_con = Float64[0.0]
 x0 = Float64[10.0, 10.0]
 lambda0 = Float64[0., 0., 0.]
 
-prob = blockSQP.blockSQPProblem(f,g, grad_f, jac_g,
-                            lb_var, ub_var, lb_con, ub_con,
-                            x0, lambda0, blockIdx = Int32[0, 1, 2])
+prob = blockSQP.Problem(f,g, grad_f, jac_g,
+                        lb_var, ub_var, lb_con, ub_con,
+                        x0, lambda0, blockIdx = Int32[0, 1, 2])
 
 
 
@@ -31,7 +31,7 @@ QPopts = qpOASES_options(sparsityLevel = 0,
                          )                            
                             
 #Set options
-opts = blockSQPOptions(opt_tol = 1e-12,
+opts = blockSQP.Options(opt_tol = 1e-12,
                        feas_tol = 1e-12,
                        enable_linesearch = false,
                        hess_approx = :BFGS,         #Either :BFGS, "BFGS" or map(c->Cchar(c),collect("BFGS"))

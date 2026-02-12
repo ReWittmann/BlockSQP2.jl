@@ -1,6 +1,6 @@
 module blockSQP
-    using SparseArrays, Symbolics
-    
+    using EnumX, SparseArrays
+    using Reexport
 	import Base.setproperty!, Base.getproperty
     
     #See Julia documentation of Indirect Calls
@@ -21,7 +21,6 @@ module blockSQP
     const libblockSQP = Ref{Ptr{Nothing}}(Ptr{Nothing}())
     function __init__()
         libblockSQP[] = try
-            # print("Attempting to load blocksqp from ", joinpath(Base.@__DIR__, "..", "bin", "libblockSQP_jl"), "\n")
             Base.Libc.Libdl.dlopen(joinpath(Base.@__DIR__, "..", "bin", "libblockSQP_jl"))
         catch blockSQP_load_error
             @info "Could not load blockSQP dynamic library from bin folder." blockSQP_load_error "\nLoading blockSQP_jll instead\n"
@@ -51,8 +50,9 @@ module blockSQP
     """
     Struct to hold Optimization.jl solver.
     """
-    struct BlockSQPOpt end
-    export BlockSQPOpt
+    struct blockSQPOptimizer end
+    Optimizer() = blockSQPOptimizer()
+    export blockSQPOptimizer
     
     # Structs to hold structure data used for scaling and condensing
     struct vblock
@@ -70,13 +70,29 @@ module blockSQP
     include("condenser.jl")
     
     include("problem.jl")
+    BlockSQPProblem = Problem
+    export BlockSQPProblem
 
     include("options.jl")
-    export blockSQPOptions, qpOASES_options
-
+    BlockSQPOptions = Options
+    export BlockSQPOptions
+    
     include("utils.jl")
+    # Some utilities for computing the block structure using Symbolics.
+    function compute_hessian_blocks(args...;kwargs...) 
+        error("Symbolics.jl being loaded is required for Hessian block computation")
+    end
 
     include("solver.jl")
-    
+    BlockSQPSolver = Solver
+    export BlockSQPSolver
+    export init!, run!, finish!, get_itCount, get_primal_solution, get_dual_solution, get_dual_solution_full
 
+    include("NLPlayouts/NLPlayouts.jl")
+    
+    include("layouts.jl")
+    export create_vblocks, create_condenser_args
+    
+    #ComponentArrays is used by NLPlayouts submodule, so we always use ComponentArrays for now.
+    include("ComponentArraysExtension.jl")
 end # module blockSQP

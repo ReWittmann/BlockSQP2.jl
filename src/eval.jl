@@ -1,5 +1,5 @@
 function initialize_dense(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}, Jac::Ptr{Cdouble})
-    Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
+    Jprob = unsafe_pointer_to_objref(Prob)::Problem
     xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi, Jprob.nVar, own = false)
     lam_arr = unsafe_wrap(Array{Cdouble, 1}, lam, Jprob.nVar + Jprob.nCon, own = false)
 
@@ -9,7 +9,7 @@ function initialize_dense(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble
 end
 
 function evaluate_dense(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}, objval::Ptr{Cdouble}, constr::Ptr{Cdouble}, gradObj::Ptr{Cdouble}, constrJac::Ptr{Cdouble}, hess::Ptr{Ptr{Cdouble}}, dmode::Cint, info::Ptr{Cint})
-    Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
+    Jprob = unsafe_pointer_to_objref(Prob)::Problem
     xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi, Jprob.nVar, own = false)
     lam_arr = unsafe_wrap(Array{Cdouble, 1}, lam, Jprob.nVar + Jprob.nCon, own = false)
     constr_arr = unsafe_wrap(Array{Cdouble, 1}, constr, Jprob.nCon, own = false)
@@ -23,13 +23,13 @@ function evaluate_dense(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble},
         gradObj_arr[:] = Jprob.grad_f(xi_arr)
         constrJac_arr[:,:] .= Jprob.jac_g(xi_arr)
         if dmode == 2
-            hess_arr = unsafe_wrap(Array{CxxPtr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
+            hess_arr = unsafe_wrap(Array{Ptr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
             
             s = Jprob.blockIdx[Jprob.n_hessblocks + 1] - Jprob.blockIdx[Jprob.n_hessblocks]
             hess_last = unsafe_wrap(Array{Cdouble,1}, hess_arr[Jprob.n_hessblocks], Cint((s*(s+Cint(1)))//(Cint(2))), own = false)
             hess_last[:] = Jprob.last_hessBlock(xi_arr, lam_arr[Jprob.nVar + 1 : Jprob.nVar + Jprob.nCon])
         elseif dmode == 3
-            hessPTR_arr = unsafe_wrap(Array{CxxPtr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
+            hessPTR_arr = unsafe_wrap(Array{Ptr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
             hess_arr = Array{Array{Cdouble, 1}, 1}(undef, Jprob.n_hessblocks)
             for i = 1:Jprob.n_hessblocks
                 Bsize = Jprob.blockIdx[i+1] - Jprob.blockIdx[i]
@@ -47,7 +47,7 @@ function evaluate_dense(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble},
 end
 
 function evaluate_simple(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, objval::Ptr{Cdouble}, constr::Ptr{Cdouble}, info::Ptr{Cint})
-    Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
+    Jprob = unsafe_pointer_to_objref(Prob)::Problem
     xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi, Jprob.nVar, own = false)
     constr_arr = unsafe_wrap(Array{Cdouble, 1}, constr, Jprob.nCon, own = false)
     
@@ -60,7 +60,7 @@ end
 
 
 function initialize_sparse(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}, jac_nz::Ptr{Cdouble}, jac_row::Ptr{Cint}, jac_colind::Ptr{Cint})
-    Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
+    Jprob = unsafe_pointer_to_objref(Prob)::Problem
     xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi, Jprob.nVar, own = false)
     lam_arr = unsafe_wrap(Array{Cdouble, 1}, lam, Jprob.nVar + Jprob.nCon, own = false)
     jac_row_arr = unsafe_wrap(Array{Cint, 1}, jac_row, Jprob.nnz, own = false)
@@ -75,7 +75,7 @@ end
 
 
 function evaluate_sparse(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}, objval::Ptr{Cdouble}, constr::Ptr{Cdouble}, gradObj::Ptr{Cdouble}, jac_nz::Ptr{Cdouble}, jac_row::Ptr{Cint}, jac_colind::Ptr{Cint}, hess::Ptr{Ptr{Cdouble}}, dmode::Cint, info::Ptr{Cint})
-    Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
+    Jprob = unsafe_pointer_to_objref(Prob)::Problem
     xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi, Jprob.nVar, own = false)
     lam_arr = unsafe_wrap(Array{Cdouble, 1}, lam, Jprob.nVar + Jprob.nCon, own = false)
     constr_arr = unsafe_wrap(Array{Cdouble, 1}, constr, Jprob.nCon, own = false)
@@ -93,7 +93,7 @@ function evaluate_sparse(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}
         @assert length(jac_g_nz_eval) == Jprob.nnz
         jac_nz_arr[:] = jac_g_nz_eval
         if dmode == 2
-            hess_arr = unsafe_wrap(Array{CxxPtr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
+            hess_arr = unsafe_wrap(Array{Ptr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
 
             s_last = Jprob.blockIdx[Jprob.n_hessblocks + 1] - Jprob.blockIdx[Jprob.n_hessblocks]
             hess_last = unsafe_wrap(Array{Cdouble,1}, hess_arr[Jprob.n_hessblocks], Cint((s_last*(s_last + Cint(1)))//(Cint(2))), own = false)
@@ -101,7 +101,7 @@ function evaluate_sparse(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}
         end
 
         if dmode == 3
-            hessPTR_arr = unsafe_wrap(Array{CxxPtr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
+            hessPTR_arr = unsafe_wrap(Array{Ptr{Cdouble}, 1}, hess, Jprob.n_hessblocks, own = false)
             hess_arr = Array{Array{Cdouble, 1}, 1}(undef, Jprob.n_hessblocks)
             for i = 1:Jprob.n_hessblocks
                 Bsize = Jprob.blockIdx[i+1] - Jprob.blockIdx[i]
@@ -120,7 +120,7 @@ end
 
 
 function reduceConstrVio(Prob::Ptr{Cvoid}, xi::Ptr{Cdouble}, info::Ptr{Cint})
-    Jprob = unsafe_pointer_to_objref(Prob)::blockSQPProblem
+    Jprob = unsafe_pointer_to_objref(Prob)::Problem
     if Jprob.continuity_restoration == fnothing
         unsafe_store!(info, Cint(1))
     else

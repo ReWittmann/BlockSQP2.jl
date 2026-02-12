@@ -30,14 +30,13 @@ ub_con = Float64[0.0]
 x0 = Float64[10.0, 10.0]
 lambda0 = Float64[0., 0., 0.]
 
-prob = blockSQP.blockSQPProblem(f,g, grad_f, jac_g,
+prob = blockSQP.Problem(f,g, grad_f, jac_g,
                             lb_var, ub_var, lb_con, ub_con,
                             x0, lambda0, blockIdx = Int32[0, 1, 2])
 blockSQP.make_sparse!(prob, Int32(nnz), jac_g_nz, jac_g_row, jac_g_colind)
 
 
-QPopts = qpOASES_options(sparsityLevel = 2)
-opts = blockSQPOptions(
+opts = blockSQP.Options(
                        maxiters = 100,
                        opt_tol = 1.0e-12,
                        feas_tol = 1.0e-12,
