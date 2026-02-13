@@ -1,6 +1,4 @@
-#include("../src/blockSQP.jl")
-#using .blockSQP
-using blockSQP
+using blockSQP2
 
 #Set objective, constraints and their first derivatives
 f = x::Array{Float64, 1} -> x[1]^2 - 0.5*x[2]^2
@@ -19,9 +17,9 @@ ub_con = Float64[0.0]
 x0 = Float64[10.0, 10.0]
 lambda0 = Float64[0., 0., 0.]
 
-prob = blockSQP.blockSQPProblem(f,g, grad_f, jac_g,
-                            lb_var, ub_var, lb_con, ub_con,
-                            x0, lambda0, blockIdx = Int32[0, 1, 2])
+prob = blockSQP2.Problem(f,g, grad_f, jac_g,
+                        lb_var, ub_var, lb_con, ub_con,
+                        x0, lambda0, blockIdx = Int32[0, 1, 2])
 
 
 
@@ -31,15 +29,15 @@ QPopts = qpOASES_options(sparsityLevel = 0,
                          )                            
                             
 #Set options
-opts = blockSQPOptions(opt_tol = 1e-12,
+opts = blockSQP2.Options(opt_tol = 1e-12,
                        feas_tol = 1e-12,
                        enable_linesearch = false,
-                       hess_approx = 2,
+                       hess_approx = :BFGS,         #Either :BFGS, "BFGS" or map(c->Cchar(c),collect("BFGS"))
                        lim_mem = true,
                        mem_size = 20,
-                       sizing = 0,
-                       fallback_approx = 2,
-                       fallback_sizing = 0,
+                       sizing = :None,
+                       fallback_approx = :BFGS,
+                       fallback_sizing = :None,
                        sparse = false,
                        print_level = 2,
                        qpsol = "qpOASES",
@@ -47,16 +45,14 @@ opts = blockSQPOptions(opt_tol = 1e-12,
                        indef_delay = 1
                        )
 
-stats = blockSQP.SQPstats("./")
+stats = blockSQP2.Stats("./")
 
-meth = blockSQP.Solver(prob, opts, stats)
-blockSQP.init!(meth)
+meth = blockSQP2.Solver(prob, opts, stats)
+init!(meth)
+ret = run!(meth, 100, 1)
+finish!(meth)
 
-ret = blockSQP.run!(meth, 100, 1)
-
-blockSQP.finish!(meth)
-
-x_opt = blockSQP.get_primal_solution(meth)
-lam_opt = blockSQP.get_dual_solution(meth)
+x_opt = get_primal_solution(meth)
+lam_opt = get_dual_solution(meth)
 
 print("Primal solution\n", x_opt, "\nDual solution\n", lam_opt, "\n")

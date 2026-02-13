@@ -1,6 +1,6 @@
-abstract type QPsolver_options end
+abstract type QPsolverOptions end
 
-mutable struct blockSQPOptions
+mutable struct Options
     maxiters::Cint
     eps::Cdouble
     inf::Cdouble
@@ -14,12 +14,12 @@ mutable struct blockSQPOptions
     lim_mem::Bool
     mem_size::Cint
     block_hess::Cint
-    exact_hess::Cint
-    hess_approx::Cint
-    fallback_approx::Cint
+    # exact_hess::Cint
+    hess_approx::Union{String, Symbol, Vector{Cchar}}
+    fallback_approx::Union{String, Symbol, Vector{Cchar}}
     initial_hess_scale::Cdouble
-    sizing::Cint
-    fallback_sizing::Cint
+    sizing::Union{String, Symbol, Vector{Cchar}}
+    fallback_sizing::Union{String, Symbol, Vector{Cchar}}
     COL_eps::Cdouble
     COL_tau_1::Cdouble
     COL_tau_2::Cdouble
@@ -34,7 +34,7 @@ mutable struct blockSQPOptions
     skip_first_linesearch::Cint
     max_SOC::Cint
     qpsol::Union{String, Symbol, Vector{Cchar}}
-    qpsol_options::Union{QPsolver_options, Nothing}
+    qpsol_options::Union{QPsolverOptions, Nothing}
     max_QP_it::Cint
     max_QP_secs::Cdouble
     max_extra_steps::Cint
@@ -44,7 +44,7 @@ mutable struct blockSQPOptions
     automatic_scaling::Bool
     enable_premature_termination::Bool
     indef_delay::Cint
-    function blockSQPOptions(;
+    function Options(;
         maxiters::Integer = 100,
         eps::AbstractFloat = 1.0e-16,
         inf::AbstractFloat = Inf,
@@ -58,12 +58,12 @@ mutable struct blockSQPOptions
         lim_mem::Bool = true,
         mem_size::Integer = 20,
         block_hess::Integer = 1,
-        exact_hess::Integer = 0,
-        hess_approx::Integer = 1,
-        fallback_approx::Integer = 2,
+        # exact_hess::Integer = 0,
+        hess_approx::Union{String, Symbol, Vector{Cchar}} = "SR1",
+        fallback_approx::Union{String, Symbol, Vector{Cchar}} = "BFGS",
         initial_hess_scale::AbstractFloat = 1.0,
-        sizing::Integer = 2,
-        fallback_sizing::Integer = 4,
+        sizing::Union{String, Symbol, Vector{Cchar}} = "OL",
+        fallback_sizing::Union{String, Symbol, Vector{Cchar}} = "COL",
         COL_eps::AbstractFloat = 0.1,
         COL_tau_1::AbstractFloat = 0.5,
         COL_tau_2::AbstractFloat = 1.0e4,
@@ -77,8 +77,8 @@ mutable struct blockSQPOptions
         max_consec_skipped_updates::Integer = 100,
         skip_first_linesearch::Bool = false,
         max_SOC::Integer = 3,
-        qpsol::String = "qpOASES",
-        qpsol_options::Union{QPsolver_options, Nothing} = nothing,
+        qpsol::Union{String, Symbol, Vector{Cchar}} = "qpOASES",
+        qpsol_options::Union{QPsolverOptions, Nothing} = nothing,
         max_QP_it::Integer = 5000,
         max_QP_secs::AbstractFloat = 3600.0,
         max_extra_steps::Integer = 0,
@@ -103,7 +103,7 @@ mutable struct blockSQPOptions
             lim_mem,
             mem_size,
             block_hess,
-            exact_hess,
+            # exact_hess,
             hess_approx,
             fallback_approx,
             initial_hess_scale,
@@ -138,11 +138,11 @@ mutable struct blockSQPOptions
 end
 
 
-mutable struct qpOASES_options <: QPsolver_options
+mutable struct qpOASESoptions <: QPsolverOptions
     sparsityLevel::Cint
     printLevel::Cint
     terminationTolerance::Cdouble
-    function qpOASES_options(;
+    function qpOASESoptions(;
         sparsityLevel::Integer = 2,
         printLevel::Integer = 0,
         terminationTolerance::AbstractFloat = 5.0e6*2.221e-16
@@ -152,8 +152,8 @@ mutable struct qpOASES_options <: QPsolver_options
 end
 
 
-function create_cxx_options(opts::blockSQPOptions)
-    BSQP = libblockSQP[]
+function create_cxx_options(opts::Options)
+    BSQP = libblockSQP2[]
     SQPoptions_obj::Ptr{Cvoid} = ccall(@dlsym(BSQP, "create_SQPoptions"), Ptr{Cvoid}, ())
     QPsolver_options_obj::Ptr{Cvoid} = Ptr{Cvoid}()
     # Constants
@@ -168,7 +168,7 @@ function create_cxx_options(opts::blockSQPOptions)
     # Termination criteria
     ccall(@dlsym(BSQP, "SQPoptions_set_opt_tol"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.opt_tol))
     ccall(@dlsym(BSQP, "SQPoptions_set_feas_tol"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.feas_tol))
-    ccall(@dlsym(BSQP, "SQPoptions_set_enable_premature_termination"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.automatic_scaling))
+    ccall(@dlsym(BSQP, "SQPoptions_set_enable_premature_termination"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_premature_termination))
     ccall(@dlsym(BSQP, "SQPoptions_set_max_extra_steps"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_extra_steps))
     
     # Line search heuristics
@@ -186,15 +186,32 @@ function create_cxx_options(opts::blockSQPOptions)
     
     # Hessian approximation
     ccall(@dlsym(BSQP, "SQPoptions_set_block_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.block_hess))
-    ccall(@dlsym(BSQP, "SQPoptions_set_exact_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.exact_hess))
-    ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.hess_approx))
-    ccall(@dlsym(BSQP, "SQPoptions_set_fallback_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_approx))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_exact_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.exact_hess))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.hess_approx))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_fallback_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_approx))
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.hess_approx)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_fallback_approx"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.fallback_approx)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
     ccall(@dlsym(BSQP, "SQPoptions_set_indef_delay"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.indef_delay))
     
     # Hessian sizing
     ccall(@dlsym(BSQP, "SQPoptions_set_initial_hess_scale"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.initial_hess_scale))
-    ccall(@dlsym(BSQP, "SQPoptions_set_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.sizing))
-    ccall(@dlsym(BSQP, "SQPoptions_set_fallback_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_sizing))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.sizing))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_fallback_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_sizing))
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_sizing"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.sizing)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_fallback_sizing"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.fallback_sizing)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    
     ccall(@dlsym(BSQP, "SQPoptions_set_COL_eps"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.COL_eps))
     ccall(@dlsym(BSQP, "SQPoptions_set_COL_tau_1"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.COL_tau_1))
     ccall(@dlsym(BSQP, "SQPoptions_set_COL_tau_2"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.COL_tau_2))
@@ -226,7 +243,7 @@ function create_cxx_options(opts::blockSQPOptions)
     if (opts.qpsol == "qpOASES" || opts.qpsol == :qpOASES || opts.qpsol == Cchar['q', 'p', 'O', 'A', 'S', 'E', 'S', '\0'])
         ccall(@dlsym(BSQP, "SQPoptions_set_qpsol"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(0))
     end
-    if typeof(opts.qpsol_options) == qpOASES_options
+    if typeof(opts.qpsol_options) == qpOASESoptions
         QPsolver_options_obj = ccall(@dlsym(BSQP, "create_qpOASES_options"), Ptr{Cvoid}, ())
         ccall(@dlsym(BSQP, "qpOASES_options_set_sparsityLevel"), Cvoid, (Ptr{Cvoid}, Cint), QPsolver_options_obj, Cint(opts.qpsol_options.sparsityLevel))
         ccall(@dlsym(BSQP, "qpOASES_options_set_printLevel"), Cvoid, (Ptr{Cvoid}, Cint), QPsolver_options_obj, Cint(opts.qpsol_options.printLevel))
@@ -239,13 +256,12 @@ function create_cxx_options(opts::blockSQPOptions)
 end
 
 function sparse_options()
-    opts = blockSQPOptions()
+    opts = Options()
     opts.sparse = true
-    opts.enable_linesearch = true
-    opts.hess_approx = 1
-    opts.sizing = 2
-    opts.fallback_approx = 2
-    opts.fallback_sizing = 4
+    opts.hess_approx = :SR1
+    opts.sizing = :OL
+    opts.fallback_approx = :BFGS
+    opts.fallback_sizing = :COL
     opts.opt_tol = 1e-6
     opts.feas_tol = 1e-6
     return opts
