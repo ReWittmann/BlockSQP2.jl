@@ -1,52 +1,77 @@
-mutable struct blockSQPProblem
+mutable struct Problem
 
-    nVar::Int32
-    nCon::Int32
-    nnz::Int32
-    blockIdx::Array{Int32, 1}
-
-    lb_var::Array{Float64, 1}
-    ub_var::Array{Float64, 1}
-    lb_con::Array{Float64, 1}
-    ub_con::Array{Float64, 1}
-    objLo::Float64
-    objUp::Float64
-
-    f::Function
-    g::Function
-    grad_f::Function
-    jac_g::Function
+    nVar::Cint
+    nCon::Cint
+    nnz::Cint
+    blockIdx::Vector{Cint}
+    
+    vblocks::Vector{vblock}
+    condenser::Union{Condenser, Nothing}
+    
+    lb_var::Vector{Cdouble}
+    ub_var::Vector{Cdouble}
+    lb_con::Vector{Cdouble}
+    ub_con::Vector{Cdouble}
+    lb_obj::Cdouble
+    ub_obj::Cdouble
+    
+    f::Function #Vector{Cdouble}[nVar] -> Cdouble
+    g::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nCon]
+    grad_f::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nVar]
+    jac_g::Function #Vector{Cdouble}[nVar] -> Matrix{Cdouble, 2}[nCon, nVar]
+    last_hessBlock::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[lastBlocksize*(lastBlocksize + 1)/2] #lower diagonal elements
+    hess::Function #Vector{Cdouble}[nVar] -> Vector{Vector{Cdouble}}[blocksize*(blocksize + 1)/2][length(blockIdx) - 1] #See utils.jl lower_to_full!, full_to_lower!
+    
+    continuity_restoration::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nVar]
+    
     jac_g_nz::Function
-    continuity_restoration::Function
-    last_hessBlock::Function
-    hess::Function
+    jac_g_row::Vector{Cint}
+    jac_g_colind::Vector{Cint}
 
-    jac_g_row::Array{Int32, 1}
-    jac_g_colind::Array{Int32, 1}
+    x0::Vector{Cdouble}
+    lambda0::Vector{Cdouble}
 
-    x0::Array{Float64, 1}
-    lambda0::Array{Float64, 1}
-
-    blockSQPProblem(f::Function,
+    function Problem(f::Function,
                     g::Function,
                     grad_f::Function,
                     jac_g::Function,
-                    lb_var::Array{Float64, 1},
-                    ub_var::Array{Float64, 1},
-                    lb_con::Array{Float64, 1},
-                    ub_con::Array{Float64, 1},
-                    x0::Array{Float64, 1},
-                    lambda0::Array{Float64,1};
-                    objLo = -Inf, objUp = Inf,
-                    nnz = Int32(-1),
-                    blockIdx = [0, length(lb_var)],
-                    jac_g_row = Int32[],
-                    jac_g_colind = Int32[],
-                    jac_g_nz = fnothing, continuity_restoration = fnothing,
-                    last_hessBlock = fnothing, hess = fnothing
-                    ) = new(Int32(length(lb_var)), Int32(length(lb_con)), nnz, blockIdx,
-                    lb_var, ub_var, lb_con, ub_con, objLo, objUp,
-                    f, g, grad_f, jac_g, jac_g_nz, continuity_restoration, last_hessBlock,
-                    hess, jac_g_row, jac_g_colind, x0, lambda0
-    )
+                    lb_var::Vector{FLOAT_T},
+                    ub_var::Vector{FLOAT_T},
+                    lb_con::Vector{FLOAT_T},
+                    ub_con::Vector{FLOAT_T},
+                    x0::Vector{FLOAT_T},
+                    lambda0::Vector{FLOAT_T};
+                    lb_obj::AbstractFloat = -Inf, 
+                    ub_obj::AbstractFloat = Inf,
+                    nnz::Integer = -1,
+                    blockIdx::Vector{INT_T_1} = Int64[0, length(lb_var)],
+                    vblocks::Vector{vblock} = vblock[],
+                    condenser::Union{Condenser, Nothing} = nothing,
+                    jac_g_row::Vector{INT_T_2} = Int64[],
+                    jac_g_colind::Vector{INT_T_3} = Int64[],
+                    jac_g_nz::Function = fnothing, 
+                    continuity_restoration::Function = fnothing,
+                    last_hessBlock::Function = fnothing, 
+                    hess::Function = fnothing
+                    ) where {FLOAT_T <: AbstractFloat, INT_T_1 <: Integer, INT_T_2 <: Integer, INT_T_3 <: Integer}
+                        if blockIdx[1] == 1
+                            blockIdx = copy(blockIdx) .-1
+                        end
+                        @assert blockIdx[1] == 0 && blockIdx[end] == length(x0)
+                        new(Cint(length(lb_var)), Cint(length(lb_con)), Cint(nnz), [Cint(x) for x in blockIdx], 
+                            vblocks, condenser,
+                            [Cdouble(x) for x in lb_var], [Cdouble(x) for x in ub_var], [Cdouble(x) for x in lb_con], [Cdouble(x) for x in ub_con], Cdouble(lb_obj), Cdouble(ub_obj),
+                            f, g, grad_f, jac_g, last_hessBlock, hess,
+                            continuity_restoration,
+                            jac_g_nz, [Cint(x) for x in jac_g_row], [Cint(x) for x in jac_g_colind], 
+                            x0, lambda0
+                            )
+    end
+end
+
+function make_sparse!(B_prob::Problem, nnz::Integer, jac_nz::Function, jac_row::Vector{T}, jac_col::Vector{T}) where T <: Integer
+    B_prob.jac_g_nz = jac_nz
+    B_prob.jac_g_row = [Cint(x) for x in jac_row]
+    B_prob.jac_g_colind = [Cint(x) for x in jac_col]
+    B_prob.nnz = Cint(nnz)
 end

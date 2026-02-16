@@ -1,246 +1,268 @@
-mutable struct BlockSQPOptions
-    opttol::Float64
-    nlinfeastol::Float64
-    maxiters::Int32
-    globalization::Int32
-    hessUpdate::Int32
-    fallbackUpdate::Int32
-    hessScaling::Int32
-    fallbackScaling::Int32
-    hessLimMem::Int32
-    hessMemsize::Int32
-    maxConsecSkippedUpdates::Int32
-    blockHess::Int32
-    whichSecondDerv::Int32
-    sparseQP::Int32
-    printLevel::Int32
-    printColor::Int32
-    debugLevel::Int32
-    which_QPsolver::String
-    maxSOCiter::Int32
-    maxConvQP::Int32
-    convStrategy::Int32
-    skipFirstGlobalization::Int32
-    hessDampFac::Float64
-    hessDamp::Int32
-    colEps::Float64
-    colTau1::Float64
-    colTau2::Float64
-    eps::Float64
-    inf::Float64
-    restoreFeas::Int32
-    maxLineSearch::Int32
-    maxConsecReducedSteps::Int32
-    maxItQP::Int32
-    maxTimeQP::Float64
-    iniHessDiag::Float64
-    function BlockSQPOptions(;
-        blockHess::Integer = Int32(1),
+abstract type QPsolverOptions end
 
-        colEps::Float64=0.0,
-        colTau1::Float64=0.0,
-        colTau2::Float64=0.0,
-        convStrategy::Integer=Int32(0),
-
-        debugLevel::Integer = Int32(0),
-
-        fallbackScaling::Integer = Int32(0),
-        fallbackUpdate::Integer = Int32(2),
-
-        globalization::Integer = Int32(0),
-        hessDamp::Integer=Int32(1),
-
-        hessDampFac::Float64=0.0,
-        hessLimMem::Integer = Int32(1),
-        hessMemsize::Integer = Int32(20),
-        hessScaling::Integer = Int32(0),
-        hessUpdate::Integer = Int32(1),
-
-                            maxiters::Integer=100,
-                            maxLineSearch::Integer=Int32(20),
-                            maxConsecReducedSteps::Integer=Int32(100),
-                            maxItQP::Integer=Int32(5000),
-                            maxTimeQP::Float64=10000.0,
-                            maxSOCiter::Integer=Int32(3),
-                            maxConvQP::Integer=Int32(1),
-                            maxConsecSkippedUpdates::Int32 = Int32(200),
-
-                            nlinfeastol::Float64 = 1.0e-12,
-                            opttol::Float64 = 1.0e-5,
-
-
-                            printLevel::Integer = Int32(2),
-                            printColor::Integer=Int32(0),
-                            restoreFeas::Integer=Int32(1),
-
-                            skipFirstGlobalization::Integer=Int32(1),
-                            sparseQP::Integer = Int32(0),
-
-                            which_QPsolver::String = "qpOASES",
-                            whichSecondDerv::Integer = Int32(0),
-
-                            eps::Float64=1e-16,
-                            inf::Float64=1e20,
-
-
-                            iniHessDiag::Float64=1.0
-                            )
+mutable struct Options
+    maxiters::Cint
+    eps::Cdouble
+    inf::Cdouble
+    print_level::Cint
+    result_print_color::Cint
+    debug_level::Cint
+    opt_tol::Cdouble
+    feas_tol::Cdouble
+    sparse::Bool
+    enable_rest::Bool
+    lim_mem::Bool
+    mem_size::Cint
+    block_hess::Cint
+    # exact_hess::Cint
+    hess_approx::Union{String, Symbol, Vector{Cchar}}
+    fallback_approx::Union{String, Symbol, Vector{Cchar}}
+    initial_hess_scale::Cdouble
+    sizing::Union{String, Symbol, Vector{Cchar}}
+    fallback_sizing::Union{String, Symbol, Vector{Cchar}}
+    COL_eps::Cdouble
+    COL_tau_1::Cdouble
+    COL_tau_2::Cdouble
+    OL_eps::Cdouble
+    BFGS_damping_factor::Cdouble
+    conv_strategy::Cint
+    max_conv_QPs::Cint
+    enable_linesearch::Bool
+    max_linesearch_steps::Cint
+    max_consec_reduced_steps::Cint
+    max_consec_skipped_updates::Cint
+    skip_first_linesearch::Cint
+    max_SOC::Cint
+    qpsol::Union{String, Symbol, Vector{Cchar}}
+    qpsol_options::Union{QPsolverOptions, Nothing}
+    max_QP_it::Cint
+    max_QP_secs::Cdouble
+    max_extra_steps::Cint
+    max_filter_overrides::Cint
+    par_QPs::Bool
+    enable_QP_cancellation::Bool
+    automatic_scaling::Bool
+    enable_premature_termination::Bool
+    indef_delay::Cint
+    function Options(;
+        maxiters::Integer = 100,
+        eps::AbstractFloat = 1.0e-16,
+        inf::AbstractFloat = Inf,
+        print_level::Integer = 2,
+        result_print_color::Integer = 2,
+        debug_level::Integer = 0,
+        opt_tol::AbstractFloat = 1.0e-6,
+        feas_tol::AbstractFloat = 1.0e-6,
+        sparse::Bool = true,
+        enable_rest::Bool = true,
+        lim_mem::Bool = true,
+        mem_size::Integer = 20,
+        block_hess::Integer = 1,
+        # exact_hess::Integer = 0,
+        hess_approx::Union{String, Symbol, Vector{Cchar}} = "SR1",
+        fallback_approx::Union{String, Symbol, Vector{Cchar}} = "BFGS",
+        initial_hess_scale::AbstractFloat = 1.0,
+        sizing::Union{String, Symbol, Vector{Cchar}} = "OL",
+        fallback_sizing::Union{String, Symbol, Vector{Cchar}} = "COL",
+        COL_eps::AbstractFloat = 0.1,
+        COL_tau_1::AbstractFloat = 0.5,
+        COL_tau_2::AbstractFloat = 1.0e4,
+        OL_eps::AbstractFloat = 1.0e-4,
+        BFGS_damping_factor::AbstractFloat = 1/3,
+        conv_strategy::Integer = 1,
+        max_conv_QPs::Integer = 4,
+        enable_linesearch::Bool = true,
+        max_linesearch_steps::Integer = 10,
+        max_consec_reduced_steps::Integer = 8,
+        max_consec_skipped_updates::Integer = 100,
+        skip_first_linesearch::Bool = false,
+        max_SOC::Integer = 3,
+        qpsol::Union{String, Symbol, Vector{Cchar}} = "qpOASES",
+        qpsol_options::Union{QPsolverOptions, Nothing} = nothing,
+        max_QP_it::Integer = 5000,
+        max_QP_secs::AbstractFloat = 3600.0,
+        max_extra_steps::Integer = 0,
+        max_filter_overrides::Integer = 2,
+        par_QPs::Bool = false,
+        enable_QP_cancellation::Bool = true,
+        automatic_scaling::Bool = false,
+        enable_premature_termination::Bool = false,
+        indef_delay::Integer = 3
+    )
         return new(
-                opttol,
-                nlinfeastol,
-                maxiters,
-                globalization,
-                hessUpdate,
-                fallbackUpdate,
-                hessScaling,
-                fallbackScaling,
-                hessLimMem,
-                hessMemsize,
-                maxConsecSkippedUpdates,
-                blockHess,
-                whichSecondDerv,
-                sparseQP,
-                printLevel,
-                printColor,
-                debugLevel,
-                which_QPsolver,
-                maxSOCiter,
-                maxConvQP,
-                convStrategy,
-                skipFirstGlobalization,
-                hessDampFac,
-                hessDamp,
-                colEps,
-                colTau1,
-                colTau2,
-                eps,
-                inf,
-                restoreFeas,
-                maxLineSearch,
-                maxConsecReducedSteps,
-                maxItQP,
-                maxTimeQP,
-                iniHessDiag)
+            maxiters,
+            eps,
+            inf,
+            print_level,
+            result_print_color,
+            debug_level,
+            opt_tol,
+            feas_tol,
+            sparse,
+            enable_rest,
+            lim_mem,
+            mem_size,
+            block_hess,
+            # exact_hess,
+            hess_approx,
+            fallback_approx,
+            initial_hess_scale,
+            sizing,
+            fallback_sizing,
+            COL_eps,
+            COL_tau_1,
+            COL_tau_2,
+            OL_eps,
+            BFGS_damping_factor,
+            conv_strategy,
+            max_conv_QPs,
+            enable_linesearch,
+            max_linesearch_steps,
+            max_consec_reduced_steps,
+            max_consec_skipped_updates,
+            skip_first_linesearch,
+            max_SOC,
+            qpsol,
+            qpsol_options,
+            max_QP_it,
+            max_QP_secs,
+            max_extra_steps,
+            max_filter_overrides,
+            par_QPs,
+            enable_QP_cancellation,
+            automatic_scaling,
+            enable_premature_termination,
+            indef_delay
+        )
     end
 end
 
-function set_cxx_options(opts::BlockSQPOptions)
-    cxx_opts = SQPoptions()
-    opt_keys = string.(fieldnames(typeof(opts)))
 
-    if "printLevel" in opt_keys
-        set_printLevel(cxx_opts, Int32(opts.printLevel))
+mutable struct qpOASESoptions <: QPsolverOptions
+    sparsityLevel::Cint
+    printLevel::Cint
+    terminationTolerance::Cdouble
+    function qpOASESoptions(;
+        sparsityLevel::Integer = 2,
+        printLevel::Integer = 0,
+        terminationTolerance::AbstractFloat = 5.0e6*2.221e-16
+        )
+        return new(sparsityLevel, printLevel, terminationTolerance)
     end
-    if "printColor" in opt_keys
-        set_printColor(cxx_opts, Int32(opts.printColor))
-    end
-    if "debugLevel" in opt_keys
-        set_debugLevel(cxx_opts, Int32(opts.debugLevel))
-    end
-    if "eps" in opt_keys
-        set_eps(cxx_opts, Float64(opts.eps))
-    end
-    if "inf" in opt_keys
-        set_inf(cxx_opts, Float64(opts.inf))
-    end
-    if "opttol" in opt_keys
-        set_opttol(cxx_opts, Float64(opts.opttol))
-    end
-    if "nlinfeastol" in opt_keys
-        set_nlinfeastol(cxx_opts, Float64(opts.nlinfeastol))
-    end
-    if "sparseQP" in opt_keys
-        set_sparseQP(cxx_opts, Int32(opts.sparseQP))
-    end
-    if "globalization" in opt_keys
-        set_globalization(cxx_opts, Int32(opts.globalization))
-    end
-    if "restoreFeas" in opt_keys
-        set_restoreFeas(cxx_opts, Int32(opts.restoreFeas))
-    end
-    if "maxLineSearch" in opt_keys
-        set_maxLineSearch(cxx_opts, Int32(opts.maxLineSearch))
-    end
-    if "maxConsecReducedSteps" in opt_keys
-        set_maxConsecReducedSteps(cxx_opts, Int32(opts.maxConsecReducedSteps))
-    end
-    if "maxConsecSkippedUpdates" in opt_keys
-        set_maxConsecSkippedUpdates(cxx_opts, Int32(opts.maxConsecSkippedUpdates))
-    end
-    if "maxItQP" in opt_keys
-        set_maxItQP(cxx_opts, Int32(opts.maxItQP))
-    end
-    if "blockHess" in opt_keys
-        set_blockHess(cxx_opts, Int32(opts.blockHess))
-    end
-    if "hessScaling" in opt_keys
-        set_hessScaling(cxx_opts, Int32(opts.hessScaling))
-    end
-    if "fallbackScaling" in opt_keys
-        set_fallbackScaling(cxx_opts, Int32(opts.fallbackScaling))
-    end
-    if "maxTimeQP" in opt_keys
-        set_maxTimeQP(cxx_opts, Float64(opts.maxTimeQP))
-    end
-    if "iniHessDiag" in opt_keys
-        set_iniHessDiag(cxx_opts, Float64(opts.iniHessDiag))
-    end
-    if "colEps" in opt_keys
-        set_colEps(cxx_opts, Float64(opts.colEps))
-    end
-    if "colTau1" in opt_keys
-        set_colTau1(cxx_opts, Float64(opts.colTau1))
-    end
-    if "colTau2" in opt_keys
-        set_colTau2(cxx_opts, Float64(opts.colTau2))
-    end
-    if "hessDamp" in opt_keys
-        set_hessDamp(cxx_opts, Int32(opts.hessDamp))
-    end
-    if "hessDampFac" in opt_keys
-        set_hessDampFac(cxx_opts, Float64(opts.hessDampFac))
-    end
-    if "hessUpdate" in opt_keys
-        set_hessUpdate(cxx_opts, Int32(opts.hessUpdate))
-    end
-    if "fallbackUpdate" in opt_keys
-        set_fallbackUpdate(cxx_opts, Int32(opts.fallbackUpdate))
-    end
-    if "hessLimMem" in opt_keys
-        set_hessLimMem(cxx_opts, Int32(opts.hessLimMem))
-    end
-    if "hessMemsize" in opt_keys
-        set_hessMemsize(cxx_opts, Int32(opts.hessMemsize))
-    end
-    if "whichSecondDerv" in opt_keys
-        set_whichSecondDerv(cxx_opts, Int32(opts.whichSecondDerv))
-    end
-    if "skipFirstGlobalization" in opt_keys
-        set_skipFirstGlobalization(cxx_opts, Int32(opts.skipFirstGlobalization))
-    end
-    if "convStrategy" in opt_keys
-        set_convStrategy(cxx_opts, Int32(opts.convStrategy))
-    end
-    if "maxConvQP" in opt_keys
-        set_maxConvQP(cxx_opts, Int32(opts.maxConvQP))
-    end
-    if "maxSOCiter" in opt_keys
-        set_maxSOCiter(cxx_opts, Int32(opts.maxSOCiter))
-    end
+end
 
-    return cxx_opts
 
+function create_cxx_options(opts::Options)
+    BSQP = libblockSQP2[]
+    SQPoptions_obj::Ptr{Cvoid} = ccall(@dlsym(BSQP, "create_SQPoptions"), Ptr{Cvoid}, ())
+    QPsolver_options_obj::Ptr{Cvoid} = Ptr{Cvoid}()
+    # Constants
+    ccall(@dlsym(BSQP, "SQPoptions_set_eps"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.eps))
+    ccall(@dlsym(BSQP, "SQPoptions_set_inf"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.inf))
+    
+    # Output
+    ccall(@dlsym(BSQP, "SQPoptions_set_print_level"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.print_level))
+    ccall(@dlsym(BSQP, "SQPoptions_set_result_print_color"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.result_print_color))
+    ccall(@dlsym(BSQP, "SQPoptions_set_debug_level"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.debug_level))
+    
+    # Termination criteria
+    ccall(@dlsym(BSQP, "SQPoptions_set_opt_tol"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.opt_tol))
+    ccall(@dlsym(BSQP, "SQPoptions_set_feas_tol"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.feas_tol))
+    ccall(@dlsym(BSQP, "SQPoptions_set_enable_premature_termination"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_premature_termination))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_extra_steps"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_extra_steps))
+    
+    # Line search heuristics
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_filter_overrides"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_filter_overrides))
+
+    # Derivative evaluation
+    ccall(@dlsym(BSQP, "SQPoptions_set_sparse"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.sparse))
+    
+    # Restoration phase
+    ccall(@dlsym(BSQP, "SQPoptions_set_enable_rest"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_rest))
+    
+    # Full/limited memory quasi newton
+    ccall(@dlsym(BSQP, "SQPoptions_set_lim_mem"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.lim_mem))
+    ccall(@dlsym(BSQP, "SQPoptions_set_mem_size"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.mem_size))
+    
+    # Hessian approximation
+    ccall(@dlsym(BSQP, "SQPoptions_set_block_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.block_hess))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_exact_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.exact_hess))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.hess_approx))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_fallback_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_approx))
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.hess_approx)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_fallback_approx"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.fallback_approx)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    ccall(@dlsym(BSQP, "SQPoptions_set_indef_delay"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.indef_delay))
+    
+    # Hessian sizing
+    ccall(@dlsym(BSQP, "SQPoptions_set_initial_hess_scale"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.initial_hess_scale))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.sizing))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_fallback_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_sizing))
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_sizing"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.sizing)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_fallback_sizing"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.fallback_sizing)))))
+    if ret > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    
+    ccall(@dlsym(BSQP, "SQPoptions_set_COL_eps"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.COL_eps))
+    ccall(@dlsym(BSQP, "SQPoptions_set_COL_tau_1"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.COL_tau_1))
+    ccall(@dlsym(BSQP, "SQPoptions_set_COL_tau_2"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.COL_tau_2))
+    ccall(@dlsym(BSQP, "SQPoptions_set_OL_eps"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.OL_eps))
+    
+    # Quasi-Newton
+    ccall(@dlsym(BSQP, "SQPoptions_set_BFGS_damping_factor"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.BFGS_damping_factor))
+    
+    # Convexification strategy
+    ccall(@dlsym(BSQP, "SQPoptions_set_conv_strategy"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.conv_strategy))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_conv_QPs"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_conv_QPs))
+    ccall(@dlsym(BSQP, "SQPoptions_set_par_QPs"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.par_QPs))
+    ccall(@dlsym(BSQP, "SQPoptions_set_enable_QP_cancellation"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_QP_cancellation))
+    
+    # Scaling
+    ccall(@dlsym(BSQP, "SQPoptions_set_automatic_scaling"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.automatic_scaling))
+    
+    # Filter line search
+    ccall(@dlsym(BSQP, "SQPoptions_set_enable_linesearch"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_linesearch))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_linesearch_steps"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_linesearch_steps))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_consec_reduced_steps"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_consec_reduced_steps))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_consec_skipped_updates"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_consec_skipped_updates))
+    ccall(@dlsym(BSQP, "SQPoptions_set_skip_first_linesearch"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.skip_first_linesearch))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_SOC"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_SOC))
+    
+    #qpsol and qpsol_options below
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_QP_it"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_QP_it))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_QP_secs"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.max_QP_secs))
+    if (opts.qpsol == "qpOASES" || opts.qpsol == :qpOASES || opts.qpsol == Cchar['q', 'p', 'O', 'A', 'S', 'E', 'S', '\0'])
+        ccall(@dlsym(BSQP, "SQPoptions_set_qpsol"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(0))
+    end
+    if typeof(opts.qpsol_options) == qpOASESoptions
+        QPsolver_options_obj = ccall(@dlsym(BSQP, "create_qpOASES_options"), Ptr{Cvoid}, ())
+        ccall(@dlsym(BSQP, "qpOASES_options_set_sparsityLevel"), Cvoid, (Ptr{Cvoid}, Cint), QPsolver_options_obj, Cint(opts.qpsol_options.sparsityLevel))
+        ccall(@dlsym(BSQP, "qpOASES_options_set_printLevel"), Cvoid, (Ptr{Cvoid}, Cint), QPsolver_options_obj, Cint(opts.qpsol_options.printLevel))
+        ccall(@dlsym(BSQP, "qpOASES_options_set_terminationTolerance"), Cvoid, (Ptr{Cvoid}, Cdouble), QPsolver_options_obj, Cdouble(opts.qpsol_options.terminationTolerance))
+        ccall(@dlsym(BSQP, "SQPoptions_set_qpsol_options"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), SQPoptions_obj, QPsolver_options_obj)
+    # elseif typeof(opts.qpsol_options) == ...
+    end
+    
+    return SQPoptions_obj, QPsolver_options_obj
 end
 
 function sparse_options()
-    opts = BlockSQPOptions()
-    opts.sparseQP = 2
-    opts.globalization = 1
-    opts.hessUpdate = 1
-    opts.hessScaling = 2
-    opts.fallbackUpdate = 2
-    opts.fallbackScaling = 4
-    opts.opttol = 1e-6
-    opts.nlinfeastol = 1e-6
+    opts = Options()
+    opts.sparse = true
+    opts.hess_approx = :SR1
+    opts.sizing = :OL
+    opts.fallback_approx = :BFGS
+    opts.fallback_sizing = :COL
+    opts.opt_tol = 1e-6
+    opts.feas_tol = 1e-6
     return opts
 end
