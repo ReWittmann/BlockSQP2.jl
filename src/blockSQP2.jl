@@ -17,7 +17,6 @@ module blockSQP2
         end
     end
     
-    # const hasjll::Bool = try
     import LinearAlgebra
     import OpenBLAS32_jll
     import blockSQP2_jll
@@ -63,12 +62,12 @@ module blockSQP2
     
     # Structs to hold structure data used for scaling and condensing
     struct vblock
-        size::Integer
+        size::Int64
         dependent::Bool 
     end
 
     struct cblock
-        size::Integer
+        size::Int64
     end
 
     

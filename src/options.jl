@@ -58,7 +58,6 @@ mutable struct Options
         lim_mem::Bool = true,
         mem_size::Integer = 20,
         block_hess::Integer = 1,
-        # exact_hess::Integer = 0,
         hess_approx::Union{String, Symbol, Vector{Cchar}} = "SR1",
         fallback_approx::Union{String, Symbol, Vector{Cchar}} = "BFGS",
         initial_hess_scale::AbstractFloat = 1.0,
@@ -186,9 +185,6 @@ function create_cxx_options(opts::Options)
     
     # Hessian approximation
     ccall(@dlsym(BSQP, "SQPoptions_set_block_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.block_hess))
-    # ccall(@dlsym(BSQP, "SQPoptions_set_exact_hess"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.exact_hess))
-    # ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.hess_approx))
-    # ccall(@dlsym(BSQP, "SQPoptions_set_fallback_approx"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_approx))
     ret = ccall(@dlsym(BSQP, "SQPoptions_set_hess_approx"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.hess_approx)))))
     if ret > 0
         error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
@@ -201,8 +197,6 @@ function create_cxx_options(opts::Options)
     
     # Hessian sizing
     ccall(@dlsym(BSQP, "SQPoptions_set_initial_hess_scale"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.initial_hess_scale))
-    # ccall(@dlsym(BSQP, "SQPoptions_set_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.sizing))
-    # ccall(@dlsym(BSQP, "SQPoptions_set_fallback_sizing"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.fallback_sizing))
     ret = ccall(@dlsym(BSQP, "SQPoptions_set_sizing"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.sizing)))))
     if ret > 0
         error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
