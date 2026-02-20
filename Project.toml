@@ -11,6 +11,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OpenBLAS32_jll = "656ef2d0-ae68-5445-9ca0-591084a874a2"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+blockSQP2_jll = "8a1cb406-4d92-5272-b91c-0b6599bad0b1"
 
 [weakdeps]
 Corleone = "2751e0db-33e9-4374-b36d-b7219e1e6b40"
@@ -48,6 +49,7 @@ SparseConnectivityTracer = "1"
 SparseMatrixColorings = ">=0.4.23"
 Symbolics = ">= 6.38"
 Test = "1"
+blockSQP2_jll = "0.1.0"
 julia = "1.6 - 1.11"
 
 [extras]

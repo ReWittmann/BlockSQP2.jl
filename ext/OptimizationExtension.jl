@@ -11,7 +11,7 @@ SciMLBase.requiresconsjac(::BlockSQP2Optimizer) = true
 SciMLBase.supports_opt_cache_interface(::BlockSQP2Optimizer) = true
 SciMLBase.has_init(::BlockSQP2Optimizer) = true
 
-@info "Loading Optimization(Base).jl extension for blockSQP2..."
+# @info "Loading Optimization(Base).jl extension for blockSQP2..."
 
 function SciMLBase.__init(
             prob::SciMLBase.OptimizationProblem, opt::BlockSQP2Optimizer,

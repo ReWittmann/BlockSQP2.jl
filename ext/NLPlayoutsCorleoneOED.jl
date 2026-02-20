@@ -4,7 +4,7 @@ using Corleone
 using CorleoneOED
 using blockSQP2.NLPlayouts
 
-@info "Loading CorleoneOED extension for blockSQP2.NLPlayouts..." 
+# @info "Loading CorleoneOED extension for blockSQP2.NLPlayouts..." 
 
 function NLPlayouts.get_preLayouts(OED::OEDLayer,
                     ps=LuxCore.initialparameters(Random.default_rng(), OED),
