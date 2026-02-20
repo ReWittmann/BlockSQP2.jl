@@ -14,7 +14,6 @@ mutable struct Options
     lim_mem::Bool
     mem_size::Cint
     block_hess::Cint
-    # exact_hess::Cint
     hess_approx::Union{String, Symbol, Vector{Cchar}}
     fallback_approx::Union{String, Symbol, Vector{Cchar}}
     initial_hess_scale::Cdouble
@@ -102,7 +101,6 @@ mutable struct Options
             lim_mem,
             mem_size,
             block_hess,
-            # exact_hess,
             hess_approx,
             fallback_approx,
             initial_hess_scale,
