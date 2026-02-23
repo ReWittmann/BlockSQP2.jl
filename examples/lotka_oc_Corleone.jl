@@ -91,7 +91,7 @@ uopt = solve(
 
 blocks = Corleone.get_block_structure(mslayer)
 
-using blockSQP2
+using BlockSQP2
 opt_BSQP_sparse = blockSQP.sparse_options()
 # Activate adaptive termination
 opt_BSQP_sparse.enable_premature_termination = true

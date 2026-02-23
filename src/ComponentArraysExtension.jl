@@ -1,10 +1,10 @@
 # module ComponentArraysExtension
 using ComponentArrays
 # using blockSQP
-# @info "Loading ComponentArrays.jl extension for blockSQP2..."
+# @info "Loading ComponentArrays.jl extension for BlockSQP2..."
 
-blockSQP2.__lowerbounds(x::ComponentArray) = x[:]
-blockSQP2.__upperbounds(x::ComponentArray) = x[:]
-blockSQP2.__initial_values(x::ComponentArray) = x[:]
+BlockSQP2.__lowerbounds(x::ComponentArray) = x[:]
+BlockSQP2.__upperbounds(x::ComponentArray) = x[:]
+BlockSQP2.__initial_values(x::ComponentArray) = x[:]
 
 # end

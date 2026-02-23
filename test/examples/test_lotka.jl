@@ -1,5 +1,5 @@
-using blockSQP2
-using blockSQP2.NLPlayouts
+using BlockSQP2
+using BlockSQP2.NLPlayouts
 using Test
 const lotka_params = Dict{Symbol, Float64}(
     :c0 => 0.4,
@@ -219,7 +219,7 @@ COLIND = jac_g0.colptr .-1
 
 jac_gNZ(x) = jacobian(g, sparse_forward_backend, x).nzval
 
-condenser = blockSQP2.Condenser(layout)
+condenser = BlockSQP2.Condenser(layout)
 
 _blockIdx = hessBlockIndexZeroBased(layout)
 @test _blockIdx[1] == 0
@@ -228,62 +228,62 @@ _blockIdx = hessBlockIndexZeroBased(layout)
 @test _blockIdx[end] == nVar
 
 
-stats = blockSQP2.Stats("./")
+stats = BlockSQP2.Stats("./")
 
-prob_default = blockSQP2.Problem(
-    f, g, grad_f, blockSQP2.fnothing,
+prob_default = BlockSQP2.Problem(
+    f, g, grad_f, BlockSQP2.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(nVar + nCon);
     blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = blockSQP2.vblock[], condenser = nothing
+    nnz = length(ROW), vblocks = BlockSQP2.vblock[], condenser = nothing
 )
-prob_vblocks = blockSQP2.Problem(
-    f, g, grad_f, blockSQP2.fnothing,
+prob_vblocks = BlockSQP2.Problem(
+    f, g, grad_f, BlockSQP2.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(nVar + nCon);
     blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = blockSQP2.create_vblocks(layout), condenser = nothing
+    nnz = length(ROW), vblocks = BlockSQP2.create_vblocks(layout), condenser = nothing
 )
-prob_condensing = blockSQP2.Problem(
-    f, g, grad_f, blockSQP2.fnothing,
+prob_condensing = BlockSQP2.Problem(
+    f, g, grad_f, BlockSQP2.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(nVar + nCon);
     blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = blockSQP2.create_vblocks(layout), condenser = condenser
+    nnz = length(ROW), vblocks = BlockSQP2.create_vblocks(layout), condenser = condenser
 )
 
-opts = blockSQP2.sparse_options()
-meth = blockSQP2.Solver(prob_default, opts, stats)
-blockSQP2.init!(meth)
-blockSQP2.run!(meth, 200, 0)
-blockSQP2.finish!(meth)
-x_opt = blockSQP2.get_primal_solution(meth)
+opts = BlockSQP2.sparse_options()
+meth = BlockSQP2.Solver(prob_default, opts, stats)
+BlockSQP2.init!(meth)
+BlockSQP2.run!(meth, 200, 0)
+BlockSQP2.finish!(meth)
+x_opt = BlockSQP2.get_primal_solution(meth)
 x_opt = ComponentArray(x_opt, layout.vLayout)
 @test isapprox(f(x_opt), 1.344408; atol = 1e-5)
-@test blockSQP2.get_itCount(meth) < 30
+@test BlockSQP2.get_itCount(meth) < 30
 
 
 opts.automatic_scaling = true
 opts.max_conv_QPs = 4
 opts.conv_strategy = 2
-meth = blockSQP2.Solver(prob_vblocks, opts, stats)
-blockSQP2.init!(meth)
-blockSQP2.run!(meth, 200, 0)
-blockSQP2.finish!(meth)
-x_opt = blockSQP2.get_primal_solution(meth)
+meth = BlockSQP2.Solver(prob_vblocks, opts, stats)
+BlockSQP2.init!(meth)
+BlockSQP2.run!(meth, 200, 0)
+BlockSQP2.finish!(meth)
+x_opt = BlockSQP2.get_primal_solution(meth)
 x_opt = ComponentArray(x_opt, layout.vLayout)
 @test isapprox(f(x_opt), 1.344408; atol = 1e-5)
-@test blockSQP2.get_itCount(meth) < 30
+@test BlockSQP2.get_itCount(meth) < 30
 
 
-meth = blockSQP2.Solver(prob_condensing, opts, stats)
-blockSQP2.init!(meth)
-blockSQP2.run!(meth, 200, 0)
-blockSQP2.finish!(meth)
-x_opt = blockSQP2.get_primal_solution(meth)
+meth = BlockSQP2.Solver(prob_condensing, opts, stats)
+BlockSQP2.init!(meth)
+BlockSQP2.run!(meth, 200, 0)
+BlockSQP2.finish!(meth)
+x_opt = BlockSQP2.get_primal_solution(meth)
 x_opt = ComponentArray(x_opt, layout.vLayout)
 @test isapprox(f(x_opt), 1.344408; atol = 1e-5)
-@test blockSQP2.get_itCount(meth) < 30
+@test BlockSQP2.get_itCount(meth) < 30
 
 
 

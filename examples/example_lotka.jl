@@ -1,5 +1,5 @@
-using blockSQP2
-using blockSQP2.NLPlayouts
+using BlockSQP2
+using BlockSQP2.NLPlayouts
 
 const lotka_params = Dict{Symbol, Float64}(
     :c0 => 0.4,
@@ -215,32 +215,32 @@ COLIND = jac_g0.colptr .-1
 
 jac_gNZ(x) = jacobian(g, sparse_forward_backend, x).nzval
 
-condenser = blockSQP2.Condenser(layout)
+condenser = BlockSQP2.Condenser(layout)
 
-("blockSQP2 allows passing sparse Jacobians, so it will have a runtime advantage.\n")
+("BlockSQP2 allows passing sparse Jacobians, so it will have a runtime advantage.\n")
 # alternative: prob = BlockSQPProblem(...)
-prob = blockSQP2.Problem(
-    f, g, grad_f, blockSQP2.fnothing,
+prob = BlockSQP2.Problem(
+    f, g, grad_f, BlockSQP2.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(axlength(vLayout) + axlength(cLayout));
     blockIdx = hessBlockIndexZeroBased(layout), jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = blockSQP2.create_vblocks(layout), condenser = condenser
+    nnz = length(ROW), vblocks = BlockSQP2.create_vblocks(layout), condenser = condenser
 )
-opts = blockSQP2.sparse_options()
+opts = BlockSQP2.sparse_options()
 opts.max_extra_steps = 0
 opts.automatic_scaling = true
 opts.max_conv_QPs = 4
 opts.conv_strategy = 2
-stats = blockSQP2.Stats("./")
+stats = BlockSQP2.Stats("./")
 
-meth = blockSQP2.Solver(prob, opts, stats)
+meth = BlockSQP2.Solver(prob, opts, stats)
 
 init!(meth)
 run!(meth, 200, 0)
 finish!(meth)
 
-blockSQP2.get_primal_solution(meth)
-x_opt = blockSQP2.get_primal_solution(meth)
+BlockSQP2.get_primal_solution(meth)
+x_opt = BlockSQP2.get_primal_solution(meth)
 x_opt = ComponentArray(x_opt, layout.vLayout)
 
 using CairoMakie
