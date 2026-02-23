@@ -92,21 +92,21 @@ uopt = solve(
 blocks = Corleone.get_block_structure(mslayer)
 
 using BlockSQP2
-opt_BSQP_sparse = blockSQP.sparse_options()
+opt_BSQP_sparse = BlockSQP2.sparse_options()
 # Activate adaptive termination
 opt_BSQP_sparse.enable_premature_termination = true
 opt_BSQP_sparse.max_extra_steps = 1
-opt_BSQP_sparse.par_QPs = true
+opt_BSQP_sparse.par_QPs = false  #Disabled in some builds, so set to false
 opt_BSQP_sparse.automatic_scaling = true
 
-using blockSQP.NLPlayouts: get_layout
+using BlockSQP2.NLPlayouts: get_layout, hessBlockIndexZeroBased
 nlplayout = get_layout(mslayer, msps, msst)
 
 blockIdx = hessBlockIndexZeroBased(nlplayout)
 vblocks = create_vblocks(nlplayout)
-condenser = blockSQP.Condenser(nlplayout)
+condenser = BlockSQP2.Condenser(nlplayout)
 uopt = solve(
-    optprob, blockSQP.Optimizer(),
+    optprob, BlockSQP2.Optimizer(),
     opttol = 1.0e-6,
     options = opt_BSQP_sparse,
     blockIdx = blockIdx,

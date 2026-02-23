@@ -27,7 +27,7 @@ SymbolicsHessUtilities = ["OptimizationBase", "Symbolics"]
 [compat]
 Aqua = "0.8.14"
 ComponentArrays = "0.15"
-Corleone = "0.0.2"
+Corleone = "0.0.2, 0.0.3"
 DifferentiationInterface = "0.7.16"
 DocStringExtensions = "0.9.5"
 EnumX = "1.0.6"
