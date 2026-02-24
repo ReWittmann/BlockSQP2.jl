@@ -102,6 +102,7 @@ function SciMLBase.__solve(
     end
     if !isnothing(cache.solver_args.condenser)
         _condenser = cache.solver_args.condenser
+        @warn "Due to the lack of a suitable QP solver, condensing is likely to reduce performance for now"
     end
     if length(cache.solver_args.vblocks) > 0
         _vblocks = cache.solver_args.vblocks
