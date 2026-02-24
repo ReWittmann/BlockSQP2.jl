@@ -1,6 +1,6 @@
 module OptimizationExtension
 
-using blockSQP2, blockSQP2.SparseArrays, blockSQP2.NLPlayouts
+using BlockSQP2, BlockSQP2.SparseArrays, BlockSQP2.NLPlayouts
 using OptimizationBase, OptimizationBase.SciMLBase
 
 SciMLBase.allowsbounds(::BlockSQP2Optimizer) = true
@@ -11,22 +11,22 @@ SciMLBase.requiresconsjac(::BlockSQP2Optimizer) = true
 SciMLBase.supports_opt_cache_interface(::BlockSQP2Optimizer) = true
 SciMLBase.has_init(::BlockSQP2Optimizer) = true
 
-@info "Loading Optimization(Base).jl extension for blockSQP2..."
+# @info "Loading Optimization(Base).jl extension for BlockSQP2..."
 
 function SciMLBase.__init(
             prob::SciMLBase.OptimizationProblem, opt::BlockSQP2Optimizer,
             ;
             callback = OptimizationBase.DEFAULT_CALLBACK,
             progress = false, maxiters = nothing,
-            options::blockSQP2.Options=blockSQP2.Options(),
+            options::BlockSQP2.Options=BlockSQP2.Options(),
             blockIdx::Union{Vector{<:Integer}, Nothing} = nothing,
-            vblocks::Union{Vector{blockSQP2.vblock}, Nothing} = blockSQP2.vblock[],
-            condenser::Union{blockSQP2.Condenser, Nothing} = nothing,
+            vblocks::Union{Vector{BlockSQP2.vblock}, Nothing} = BlockSQP2.vblock[],
+            condenser::Union{BlockSQP2.Condenser, Nothing} = nothing,
             layout::Union{NLPlayouts.NLPlayout, Nothing} = nothing,
             kwargs...
             )
     if isnothing(vblocks)
-        vblocks = blockSQP2.vblock[]
+        vblocks = BlockSQP2.vblock[]
     end
     return OptimizationCache(prob, opt; 
         callback = callback, progress = progress, maxiters = maxiters,
@@ -35,7 +35,7 @@ function SciMLBase.__init(
 end
 
 function __map_optimizer_args!(cache::OptimizationCache,
-    opt::blockSQP2.Options;
+    opt::BlockSQP2.Options;
     callback = nothing,
     maxiters::Union{Number, Nothing} = nothing,
     maxtime::Union{Number, Nothing} = nothing,
@@ -44,7 +44,7 @@ function __map_optimizer_args!(cache::OptimizationCache,
     kwargs...)
 
     for j in kwargs
-        if j.first in fieldnames(blockSQP2.Options)
+        if j.first in fieldnames(BlockSQP2.Options)
             setproperty!(opt, j.first, j.second)
         end
     end
@@ -89,7 +89,7 @@ function SciMLBase.__solve(
                 cache.solver_args...)
     
     _blockIdx = Cint[0, num_x]
-    _vblocks = blockSQP2.vblock[]
+    _vblocks = BlockSQP2.vblock[]
     _condenser = nothing
     
     if !isnothing(cache.solver_args.layout) 
@@ -98,7 +98,7 @@ function SciMLBase.__solve(
         _vblocks = create_vblocks(_layer)
         
         #Deactivate this for now, requiring explicit passing of a condenser.
-        # _condenser = blockSQP2.Condenser(_layout)
+        # _condenser = BlockSQP2.Condenser(_layout)
     end
     if !isnothing(cache.solver_args.condenser)
         _condenser = cache.solver_args.condenser
@@ -174,13 +174,13 @@ function SciMLBase.__solve(
     _lambda_0 = zeros(T, num_x+num_cons)
     
     
-    stats = blockSQP2.Stats("./")
+    stats = BlockSQP2.Stats("./")
     
-    _lb = blockSQP2.__lowerbounds(_lb)
-    _ub = blockSQP2.__upperbounds(_ub)
-    _u0 = blockSQP2.__initial_values(cache.u0)
+    _lb = BlockSQP2.__lowerbounds(_lb)
+    _ub = BlockSQP2.__upperbounds(_ub)
+    _u0 = BlockSQP2.__initial_values(cache.u0)
     
-    sqp_prob = blockSQP2.Problem(_loss, _cons, _g, _jac_cons,
+    sqp_prob = BlockSQP2.Problem(_loss, _cons, _g, _jac_cons,
                             _lb, _ub, _lb_cons, _ub_cons,
                             _u0, _lambda_0; 
                             blockIdx = _blockIdx,
@@ -188,38 +188,38 @@ function SciMLBase.__solve(
                             condenser = _condenser,
                             jac_g_row = jac_g_row, jac_g_colind = jac_g_col,
                             nnz = nnz,
-                            jac_g_nz = opts.sparse ? sparse_jac : blockSQP2.fnothing
+                            jac_g_nz = opts.sparse ? sparse_jac : BlockSQP2.fnothing
                             )
     
-    meth = blockSQP2.Solver(sqp_prob, opts, stats)
+    meth = BlockSQP2.Solver(sqp_prob, opts, stats)
     
-    blockSQP2.init!(meth)
+    BlockSQP2.init!(meth)
     t0 = time()
     if cache.callback == OptimizationBase.DEFAULT_CALLBACK
-        ret = blockSQP2.run!(meth, opts.maxiters, 1)
+        ret = BlockSQP2.run!(meth, opts.maxiters, 1)
     else
         for i=1:opts.maxiters
-            ret = blockSQP2.run!(meth, 1, 1)
-            _iterate = blockSQP2.get_primal_solution(meth)
+            ret = BlockSQP2.run!(meth, 1, 1)
+            _iterate = BlockSQP2.get_primal_solution(meth)
             _obj = _loss(_iterate)[1]
             state = OptimizationBase.OptimizationState(iter = i,
                 u = _iterate,
                 objective = _obj[1])
             cret = cache.callback(state, _obj)
-            (cret || blockSQP2.is_success(ret)) && break
+            (cret || BlockSQP2.is_success(ret)) && break
         end
     end
-    blockSQP2.finish!(meth)
+    BlockSQP2.finish!(meth)
     t1 = time()
     
-    x_opt = blockSQP2.get_primal_solution(meth)
-    lambda = blockSQP2.get_dual_solution(meth)
+    x_opt = BlockSQP2.get_primal_solution(meth)
+    lambda = BlockSQP2.get_dual_solution(meth)
     f_opt = _loss(x_opt)
-    retcode = blockSQP2.is_success(ret) ? SciMLBase.ReturnCode.Success : SciMLBase.ReturnCode.Default
+    retcode = BlockSQP2.is_success(ret) ? SciMLBase.ReturnCode.Success : SciMLBase.ReturnCode.Default
     
     SciMLBase.build_solution(cache, cache.opt,
     x_opt, f_opt;
-         (; original = (ret = ret, multiplier = lambda, solve_time = t1 - t0, solve_it = Int64(blockSQP2.get_itCount(meth))) , retcode = retcode,
+         (; original = (ret = ret, multiplier = lambda, solve_time = t1 - t0, solve_it = Int64(BlockSQP2.get_itCount(meth))) , retcode = retcode,
             )...)
 end
 

@@ -85,17 +85,17 @@ optprob = OptimizationProblem(
 
 blockIdx_CRL = Corleone.get_block_structure(mslayer)
 
-using blockSQP2
-using blockSQP2.NLPlayouts: get_layout, hessBlockIndexZeroBased
+using BlockSQP2
+using BlockSQP2.NLPlayouts: get_layout, hessBlockIndexZeroBased
 nlplayout = get_layout(mslayer, msps, msst)
 
 blockIdx = hessBlockIndexZeroBased(nlplayout)
 @test blockIdx == blockIdx_CRL
 
 
-opts = blockSQP2.sparse_options()
+opts = BlockSQP2.sparse_options()
 uopt_default = solve(
-    optprob, blockSQP2.Optimizer(),
+    optprob, BlockSQP2.Optimizer(),
     opttol = 1.0e-6,
     options = opts,
     blockIdx = blockIdx,
@@ -107,7 +107,7 @@ opts.automatic_scaling = true
 opts.conv_strategy = 2
 vblocks = create_vblocks(nlplayout)
 uopt_structure = solve(
-    optprob, blockSQP2.Optimizer(),
+    optprob, BlockSQP2.Optimizer(),
     opttol = 1.0e-6,
     options = opts,
     blockIdx = blockIdx,
@@ -116,9 +116,9 @@ uopt_structure = solve(
 )
 @test SciMLBase.successful_retcode(uopt_structure)
 
-condenser = blockSQP2.Condenser(nlplayout)
+condenser = BlockSQP2.Condenser(nlplayout)
 uopt_condensing = solve(
-    optprob, blockSQP2.Optimizer(),
+    optprob, BlockSQP2.Optimizer(),
     opttol = 1.0e-6,
     options = opts,
     blockIdx = blockIdx,

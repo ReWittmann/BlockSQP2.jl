@@ -1,4 +1,4 @@
-module blockSQP2
+module BlockSQP2
     using EnumX, SparseArrays
     using Reexport
 	import Base.setproperty!, Base.getproperty
@@ -20,22 +20,22 @@ module blockSQP2
     #Module holder
     const libblockSQP2 = Ref{Ptr{Nothing}}(Ptr{Nothing}())
     
-    ### Release version: Load blockSQP2 via blockSQP2_jll ###
-        # import blockSQP2_jll
-        # import LinearAlgebra
-        # import OpenBLAS32_jll
+    ### Release version: Load BlockSQP2 via blockSQP2_jll ###
+        import blockSQP2_jll
+        import LinearAlgebra
+        import OpenBLAS32_jll
         
-        # function __init__()
-        #     LinearAlgebra.BLAS.lbt_forward(OpenBLAS32_jll.libopenblas_path)
-        #     libblockSQP2[] = Base.Libc.Libdl.dlopen(blockSQP2_jll.libblockSQP2_jl)
-        # end
+        function __init__()
+            LinearAlgebra.BLAS.lbt_forward(OpenBLAS32_jll.libopenblas_path)
+            libblockSQP2[] = Base.Libc.Libdl.dlopen(blockSQP2_jll.libblockSQP2_jl)
+        end
     ### End ###
     
-    ### Development version: Use locally built blockSQP2_jl ###
-        function __dev__()
-            libblockSQP2[] = Base.Libc.Libdl.dlopen(joinpath(Base.@__DIR__, "..", "bin", "libblockSQP2_jl"))
-        end
-        __init__() = __dev__()
+    ### Development version: Use locally built BlockSQP2_jl ###
+        # function __dev__()
+        #     libblockSQP2[] = Base.Libc.Libdl.dlopen(joinpath(Base.@__DIR__, "..", "bin", "libblockSQP2_jl"))
+        # end
+        # __init__() = __dev__()
     ### End ###
     
     

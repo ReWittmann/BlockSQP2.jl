@@ -1,4 +1,4 @@
-using blockSQP2
+using BlockSQP2
 
 ###Example problem taken from blockSQP paper (Janka 2016) (sparse version)###
 
@@ -28,13 +28,13 @@ ub_con = Float64[0.0]
 x0 = Float64[10.0, 10.0]
 lambda0 = Float64[0., 0., 0.]
 
-prob = blockSQP2.Problem(f,g, grad_f, jac_g,
+prob = BlockSQP2.Problem(f,g, grad_f, jac_g,
                             lb_var, ub_var, lb_con, ub_con,
                             x0, lambda0, blockIdx = Int32[0, 1, 2])
-blockSQP2.make_sparse!(prob, Int32(nnz), jac_g_nz, jac_g_row, jac_g_colind)
+BlockSQP2.make_sparse!(prob, Int32(nnz), jac_g_nz, jac_g_row, jac_g_colind)
 
 
-opts = blockSQP2.Options(
+opts = BlockSQP2.Options(
                        maxiters = 100,
                        opt_tol = 1.0e-12,
                        feas_tol = 1.0e-12,
@@ -46,9 +46,9 @@ opts = blockSQP2.Options(
 )
 
 
-stats = blockSQP2.Stats("./")
+stats = BlockSQP2.Stats("./")
 
-meth = blockSQP2.Solver(prob, opts, stats)
+meth = BlockSQP2.Solver(prob, opts, stats)
 
 init!(meth)
 ret = run!(meth, Int32(100), Int32(1))
