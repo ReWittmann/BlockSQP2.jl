@@ -50,7 +50,7 @@ SparseMatrixColorings = "0.4.23"
 Symbolics = "6.38, 7"
 Test = "1"
 blockSQP2_jll = "0.1.0"
-julia = "1.9"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
