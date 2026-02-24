@@ -3,7 +3,7 @@ using Pkg
 Pkg.activate(@__DIR__)
 Pkg.develop(path = joinpath(@__DIR__, ".."))
 
-Pkg.add(name = "Corleone", version="0.0.2")
+Pkg.add(name = "Corleone", version="0.0.3")
 Pkg.add("LuxCore")
 Pkg.add("OrdinaryDiffEq")
 Pkg.add("SciMLSensitivity")
