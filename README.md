@@ -15,7 +15,7 @@ Afterwards, the package can be managed through the Julia package manager as usua
 ### Licensing
 BlockSQP2.jl is published under the very permissive zlib license, see LICENSE.txt.
 
-### Example from blockSQP
+### Example
 **min** &nbsp; x<sub>1</sub><sup>2</sup> - 0.5x<sub>2</sub><sup>2</sup>  
 &nbsp; **s.t.** &nbsp; -inf < x<sub>1</sub>, x<sub>2</sub> < inf  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 ≤ x<sub>1</sub> - x<sub>2</sub> ≤ 0
