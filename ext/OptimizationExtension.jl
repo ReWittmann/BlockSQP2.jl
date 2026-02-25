@@ -146,7 +146,7 @@ function SciMLBase.__solve(
         end
     end
     
-    jac_g_row, jac_g_col, nnz, jac_row, jac_col = begin
+    jac_g_row, jac_g_col, jac_row, jac_col = begin
         # if use_sparse_functions
         if opts.sparse
             #Hacky: Calculate constraint Jacobian for perturbed points to find structural nonzero elements
@@ -155,9 +155,9 @@ function SciMLBase.__solve(
             u0_pert_3 = [x + 1e-4*rand() for x in cache.u0]
             J_sparse = sparse(_jac_cons(cache.u0) + _jac_cons(u0_pert_1) + _jac_cons(u0_pert_2) + _jac_cons(u0_pert_3))
             jac_row, jac_col, jac_val = findnz(J_sparse)
-            J_sparse.rowval .- 1, J_sparse.colptr .- 1, length(jac_val), jac_row, jac_col
+            J_sparse.rowval .- 1, J_sparse.colptr .- 1, jac_row, jac_col
         else
-            Cint[], Cint[], -1, nothing, nothing
+            Cint[], Cint[], nothing, nothing
         end
     end
     
@@ -188,7 +188,6 @@ function SciMLBase.__solve(
                             vblocks = _vblocks,
                             condenser = _condenser,
                             jac_g_row = jac_g_row, jac_g_colind = jac_g_col,
-                            nnz = nnz,
                             jac_g_nz = opts.sparse ? sparse_jac : BlockSQP2.fnothing
                             )
     
@@ -220,7 +219,7 @@ function SciMLBase.__solve(
     
     SciMLBase.build_solution(cache, cache.opt,
     x_opt, f_opt;
-         (; original = (ret = ret, multiplier = lambda, solve_time = t1 - t0, solve_it = Int64(BlockSQP2.get_itCount(meth))) , retcode = retcode,
+         (; original = (ret = ret, multiplier = lambda, solve_time = t1 - t0, solve_it = Int64(BlockSQP2.get_itCount(meth))), retcode = retcode,
             )...)
 end
 

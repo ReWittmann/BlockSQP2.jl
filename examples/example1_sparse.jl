@@ -13,7 +13,8 @@ f = x::Array{Float64, 1} -> x[1]^2 - 0.5*x[2]^2
 g = x::Array{Float64, 1} -> Float64[x[1] - x[2]]
 grad_f = x::Array{Float64, 1} -> Float64[2*x[1], -x[2]]
 jac_g = x::Array{Float64, 1} -> Float64[1 -1]
-nnz = 2
+
+#Sparse constraint Jacobian in CCS format
 jac_g_nz = x::Array{Float64, 1} -> Float64[1, -1]
 jac_g_row = Int32[0, 0]
 jac_g_colind = Int32[0, 1, 2]
@@ -30,8 +31,11 @@ lambda0 = Float64[0., 0., 0.]
 
 prob = BlockSQP2.Problem(f,g, grad_f, jac_g,
                             lb_var, ub_var, lb_con, ub_con,
-                            x0, lambda0, blockIdx = Int32[0, 1, 2])
-BlockSQP2.make_sparse!(prob, Int32(nnz), jac_g_nz, jac_g_row, jac_g_colind)
+                            x0, lambda0; 
+                            jac_g_nz = jac_g_nz,
+                            jac_g_row = jac_g_row,
+                            jac_g_colind = jac_g_colind,
+                            blockIdx = Int64[0, 1, 2])
 
 
 opts = BlockSQP2.Options(
@@ -45,9 +49,7 @@ opts = BlockSQP2.Options(
                        indef_delay = 1
 )
 
-
 stats = BlockSQP2.Stats("./")
-
 meth = BlockSQP2.Solver(prob, opts, stats)
 
 init!(meth)
