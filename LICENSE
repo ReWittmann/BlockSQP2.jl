@@ -1,4 +1,4 @@
-blockSQP2.jl -- The Julia interface of the blockSQP2 nonlinear
+BlockSQP2.jl -- The Julia interface of the blockSQP2 nonlinear
 	            programming solver.  
 Copyright (c) 2025 Reinhold Wittmann <reinhold.wittmann@ovgu.de> and Christoph Plate <christoph.plate@ovgu.de>
 
