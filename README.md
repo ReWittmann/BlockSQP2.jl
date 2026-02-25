@@ -98,6 +98,6 @@ lam_opt = get_dual_solution(meth)
 ### See also
 [Corleone.jl](https://github.com/SciML/Corleone.jl) - setup optimal control problems, apply multiple-shooting to obtain structured nonlinear optimization problems, and much more.  
   
-*/examples/lotka_oc_Corleone.jl* - example of using Corleone 0.0.3 to setup and parameterize an optimal control problem and using BlockSQP2 to solve it efficiently.  
+*/examples/lotka_oc_Corleone.jl* - example of using Corleone 0.0.3 to setup and parameterize an optimal control problem via [multiple shooting](https://www.sciencedirect.com/science/article/pii/S1474667017612059), and solving it efficiently with BlockSQP2.  
   
 [blockSQP2 paper preprint](https://optimization-online.org/?p=32379)
