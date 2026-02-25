@@ -42,7 +42,7 @@ options = BlockSQP2.Options(; opt_tol = 1.0e-12,
                               enable_linesearch = false)
 
 sol_bsqp = solve(prob, BlockSQP2.Optimizer(); 
-                 blockIdx=[0,1,2], 
+                 blockIdx=[0,1,2], #block indices of the block-diagonal Hessian
                  options = options)
 ```
 ... or directly
