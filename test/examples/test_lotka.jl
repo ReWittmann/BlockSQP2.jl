@@ -235,21 +235,21 @@ prob_default = BlockSQP2.Problem(
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(nVar + nCon);
     blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = BlockSQP2.vblock[], condenser = nothing
+    vblocks = BlockSQP2.vblock[], condenser = nothing
 )
 prob_vblocks = BlockSQP2.Problem(
     f, g, grad_f, BlockSQP2.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(nVar + nCon);
     blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = BlockSQP2.create_vblocks(layout), condenser = nothing
+    vblocks = BlockSQP2.create_vblocks(layout), condenser = nothing
 )
 prob_condensing = BlockSQP2.Problem(
     f, g, grad_f, BlockSQP2.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(nVar + nCon);
     blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    nnz = length(ROW), vblocks = BlockSQP2.create_vblocks(layout), condenser = condenser
+    vblocks = BlockSQP2.create_vblocks(layout), condenser = condenser
 )
 
 opts = BlockSQP2.sparse_options()

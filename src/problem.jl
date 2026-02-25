@@ -43,7 +43,6 @@ mutable struct Problem
                     lambda0::Vector{FLOAT_T};
                     lb_obj::AbstractFloat = -Inf, 
                     ub_obj::AbstractFloat = Inf,
-                    nnz::Integer = -1,
                     blockIdx::Vector{INT_T_1} = Int64[0, length(lb_var)],
                     vblocks::Vector{vblock} = vblock[],
                     condenser::Union{Condenser, Nothing} = nothing,
@@ -58,6 +57,7 @@ mutable struct Problem
                             blockIdx = copy(blockIdx) .-1
                         end
                         @assert blockIdx[1] == 0 && blockIdx[end] == length(x0)
+                        nnz = length(jac_g_colind) > 0 ? length(jac_g_row) : -1
                         new(Cint(length(lb_var)), Cint(length(lb_con)), Cint(nnz), [Cint(x) for x in blockIdx], 
                             vblocks, condenser,
                             [Cdouble(x) for x in lb_var], [Cdouble(x) for x in ub_var], [Cdouble(x) for x in lb_con], [Cdouble(x) for x in ub_con], Cdouble(lb_obj), Cdouble(ub_obj),
