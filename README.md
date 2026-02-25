@@ -1,4 +1,4 @@
-**BlockSQP2.jl** -- A Julia interface to blockSQP2, a nonlinear  
+**BlockSQP2.jl** -- A Julia interface to [blockSQP2](https://github.com/ReWittmann/blockSQP2), a nonlinear  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; programming solver based on [blockSQP](https://github.com/djanka2/blockSQP).  
 Copyright (c) 2025 Reinhold Wittmann <reinhold.wittmann@ovgu.de> and Christoph Plate <christoph.plate@ovgu.de>
 
