@@ -95,7 +95,7 @@ function SciMLBase.__solve(
     if !isnothing(cache.solver_args.layout) 
         _layout = cache.solver_args.layout
         _blockIdx = hessBlockIndexZeroBased(_layout)
-        _vblocks = create_vblocks(_layer)
+        _vblocks = create_vblocks(_layout)
         
         #Deactivate this for now, requiring explicit passing of a condenser.
         # _condenser = BlockSQP2.Condenser(_layout)

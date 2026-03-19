@@ -116,6 +116,15 @@ uopt_structure = solve(
 )
 @test SciMLBase.successful_retcode(uopt_structure)
 
+uopt_structure = solve(
+    optprob, BlockSQP2.Optimizer(),
+    opttol = 1.0e-6,
+    options = opts,
+    layout = nlplayout,
+    maxiters = 300,
+)
+@test SciMLBase.successful_retcode(uopt_structure)
+
 condenser = BlockSQP2.Condenser(nlplayout)
 uopt_condensing = solve(
     optprob, BlockSQP2.Optimizer(),
