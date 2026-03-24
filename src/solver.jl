@@ -92,10 +92,10 @@ mutable struct Solver
                         Ptr{Ptr{Cdouble}}, Cint, Ptr{Cint})))
         
         
-        ccall(@dlsym(BSQP, "Problemspec_set_continuity_restoration"), Cvoid,
+        ccall(@dlsym(BSQP, "Problemspec_set_reduce_constr_vio"), Cvoid,
             (Ptr{Cvoid}, Ptr{Cvoid}),
             new_Problemspec_obj,
-            @cfunction(reduceConstrVio, Nothing, (Ptr{Cvoid}, Ptr{Cdouble}, Ptr{Cint})))
+            @cfunction(reduce_constr_vio, Nothing, (Ptr{Cvoid}, Ptr{Cdouble}, Ptr{Cint})))
 
         ccall(@dlsym(BSQP, "Problemspec_set_blockIdx"), Cvoid,
             (Ptr{Cvoid}, Ptr{Cint}, Cint), new_Problemspec_obj, pointer(J_prob.blockIdx), Cint(length(J_prob.blockIdx) - 1))

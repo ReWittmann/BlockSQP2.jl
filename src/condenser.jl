@@ -295,7 +295,7 @@ function full_condense!(J_cond::Condenser, grad_obj::Vector{Float64}, constr_jac
         condensed_hess[i] = Matrix{Float64}(undef, condensed_hsize, condensed_hsize)
         condensed_hessblock_data = unsafe_wrap(Vector{Cdouble},
                                                ccall(@dlsym(BSQP, "SymMatrix_array_index_array"), Ptr{Cdouble}, (Ptr{Cvoid}, Cint), J_cond.SymMatrix_array_condensed_hess, Cint(i - 1)),
-                                               condensed_hsize^2;
+                                               Cint((condensed_hsize*(condensed_hsize + 1)) // 2);
                                                own = false
                                                )
         lower_to_full!(reshape(condensed_hess[i], Int64(condensed_hsize^2)), condensed_hessblock_data, condensed_hsize)
