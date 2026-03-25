@@ -22,7 +22,7 @@ mutable struct Problem
     last_hessBlock::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[lastBlocksize*(lastBlocksize + 1)/2] #lower diagonal elements
     hess::Function #Vector{Cdouble}[nVar] -> Vector{Vector{Cdouble}}[blocksize*(blocksize + 1)/2][length(blockIdx) - 1] #See utils.jl lower_to_full!, full_to_lower!
     
-    constrVioReducer::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nVar]
+    # constrVioReducer::Function #Vector{Cdouble}[nVar] -> Vector{Cdouble}[nVar]
     
     jac_g_nz::Function
     jac_g_row::Vector{Cint}
@@ -32,27 +32,27 @@ mutable struct Problem
     lambda0::Vector{Cdouble}
 
     function Problem(f::Function,
-                    g::Function,
-                    grad_f::Function,
-                    jac_g::Function,
-                    lb_var::Vector{FLOAT_T},
-                    ub_var::Vector{FLOAT_T},
-                    lb_con::Vector{FLOAT_T},
-                    ub_con::Vector{FLOAT_T},
-                    x0::Vector{FLOAT_T},
-                    lambda0::Vector{FLOAT_T};
-                    lb_obj::AbstractFloat = -Inf, 
-                    ub_obj::AbstractFloat = Inf,
-                    blockIdx::Vector{INT_T_1} = Int64[0, length(lb_var)],
-                    vblocks::Vector{vblock} = vblock[],
-                    condenser::Union{Condenser, Nothing} = nothing,
-                    jac_g_row::Vector{INT_T_2} = Int64[],
-                    jac_g_colind::Vector{INT_T_3} = Int64[],
-                    jac_g_nz::Function = fnothing, 
-                    constrVioReducer::Function = fnothing,
-                    last_hessBlock::Function = fnothing, 
-                    hess::Function = fnothing
-                    ) where {FLOAT_T <: AbstractFloat, INT_T_1 <: Integer, INT_T_2 <: Integer, INT_T_3 <: Integer}
+                     g::Function,
+                     grad_f::Function,
+                     jac_g::Function,
+                     lb_var::Vector{FLOAT_T},
+                     ub_var::Vector{FLOAT_T},
+                     lb_con::Vector{FLOAT_T},
+                     ub_con::Vector{FLOAT_T},
+                     x0::Vector{FLOAT_T},
+                     lambda0::Vector{FLOAT_T};
+                     lb_obj::AbstractFloat = -Inf, 
+                     ub_obj::AbstractFloat = Inf,
+                     blockIdx::Vector{INT_T_1} = Int64[0, length(lb_var)],
+                     vblocks::Vector{vblock} = vblock[],
+                     condenser::Union{Condenser, Nothing} = nothing,
+                     jac_g_row::Vector{INT_T_2} = Int64[],
+                     jac_g_colind::Vector{INT_T_3} = Int64[],
+                     jac_g_nz::Function = fnothing, 
+                    #  constrVioReducer::Function = fnothing,
+                     last_hessBlock::Function = fnothing, 
+                     hess::Function = fnothing
+                     ) where {FLOAT_T <: AbstractFloat, INT_T_1 <: Integer, INT_T_2 <: Integer, INT_T_3 <: Integer}
                         if blockIdx[1] == 1
                             blockIdx = copy(blockIdx) .-1
                         end
@@ -62,7 +62,7 @@ mutable struct Problem
                             vblocks, condenser,
                             [Cdouble(x) for x in lb_var], [Cdouble(x) for x in ub_var], [Cdouble(x) for x in lb_con], [Cdouble(x) for x in ub_con], Cdouble(lb_obj), Cdouble(ub_obj),
                             f, g, grad_f, jac_g, last_hessBlock, hess,
-                            constrVioReducer,
+                            # constrVioReducer,
                             jac_g_nz, [Cint(x) for x in jac_g_row], [Cint(x) for x in jac_g_colind], 
                             x0, lambda0
                             )

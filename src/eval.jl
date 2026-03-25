@@ -119,14 +119,14 @@ function evaluate_sparse(Prob::Ptr{Nothing}, xi::Ptr{Cdouble}, lam::Ptr{Cdouble}
 end
 
 
-function reduce_constr_vio(Prob::Ptr{Cvoid}, xi::Ptr{Cdouble}, info::Ptr{Cint})
-    Jprob = unsafe_pointer_to_objref(Prob)::Problem
-    if Jprob.continuity_restoration == fnothing
-        unsafe_store!(info, Cint(1))
-    else
-        xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi.cpp_object, Jprob.nVar, own = false)
-        xi_arr[:] = Jprob.constrVioReducer(xi_arr)
-        unsafe_store!(info, Cint(0))
-    end
-    return
-end
+# function reduce_constr_vio(Prob::Ptr{Cvoid}, xi::Ptr{Cdouble}, info::Ptr{Cint})
+#     Jprob = unsafe_pointer_to_objref(Prob)::Problem
+#     if Jprob.continuity_restoration == fnothing
+#         unsafe_store!(info, Cint(1))
+#     else
+#         xi_arr = unsafe_wrap(Array{Cdouble, 1}, xi.cpp_object, Jprob.nVar, own = false)
+#         xi_arr[:] = Jprob.constrVioReducer(xi_arr)
+#         unsafe_store!(info, Cint(0))
+#     end
+#     return
+# end
