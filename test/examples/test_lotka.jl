@@ -287,4 +287,30 @@ x_opt = ComponentArray(x_opt, layout.vLayout)
 
 
 
+ub_var[1] = -100
+prob_infeasible = BlockSQP2.Problem(
+    f, g, grad_f, BlockSQP2.fnothing,
+    collect(lb_var), collect(ub_var), lb_con, ub_con,
+    collect(x_start), zeros(nVar + nCon);
+    blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
+    vblocks = BlockSQP2.vblock[], condenser = nothing
+)
+opts = BlockSQP2.sparse_options()
+meth = BlockSQP2.Solver(prob_infeasible, opts, stats)
+BlockSQP2.init!(meth)
+should_be_restoration_failure = BlockSQP2.run!(meth, 200, 0)
+BlockSQP2.finish!(meth)
+@test should_be_restoration_failure == BlockSQP2.SQPresults.restoration_failure
 
+ub_con[1] = 100
+prob_infeasible_cond = BlockSQP2.Problem(
+    f, g, grad_f, BlockSQP2.fnothing,
+    collect(lb_var), collect(ub_var), lb_con, ub_con,
+    collect(x_start), zeros(nVar + nCon);
+    blockIdx = _blockIdx, jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
+    vblocks = BlockSQP2.vblock[], condenser = condenser
+)
+opts = BlockSQP2.sparse_options()
+meth = BlockSQP2.Solver(prob_infeasible_cond, opts, stats)
+BlockSQP2.init!(meth)
+@test_throws ErrorException ret = BlockSQP2.run!(meth, 200, 0)
