@@ -61,6 +61,9 @@ mutable struct Condenser
         
         # Pass ownership of vblock_array, cblock_array, hsize_array, target_array
         Condenser_obj = ccall(@dlsym(BSQP, "create_Condenser"), Ptr{Cvoid}, (Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Cint), new_vblock_array_obj, Cint(length(arg_vblocks)), new_cblock_array_obj, Cint(length(arg_cblocks)), new_hsize_array_obj, Cint(length(arg_hsizes)), new_target_array_obj, Cint(length(arg_targets)), Cint(arg_dep_bounds))
+        if Condenser_obj == C_NULL
+            error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+        end
         
         nVar = ccall(@dlsym(BSQP, "Condenser_nVar"), Cint, (Ptr{Cvoid},), Condenser_obj)
         nCon = ccall(@dlsym(BSQP, "Condenser_nCon"), Cint, (Ptr{Cvoid},), Condenser_obj)
