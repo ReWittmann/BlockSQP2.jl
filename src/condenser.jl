@@ -252,11 +252,14 @@ function full_condense!(J_cond::Condenser, grad_obj::Vector{Float64}, constr_jac
                 own = false
                 )[:] = ub_con
     
-    ccall(@dlsym(BSQP, "Condenser_full_condense"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+    full_condense_error = ccall(@dlsym(BSQP, "Condenser_full_condense"), Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
                 cond, 
                 J_cond.Matrix_grad_obj, J_cond.Sparse_Matrix_constr_jac, J_cond.SymMatrix_array_hess, J_cond.Matrix_lb_var, J_cond.Matrix_ub_var, J_cond.Matrix_lb_con, J_cond.Matrix_ub_con,
                 J_cond.Matrix_condensed_grad_obj, J_cond.Sparse_Matrix_condensed_constr_jac, J_cond.SymMatrix_array_condensed_hess, J_cond.Matrix_condensed_lb_var, J_cond.Matrix_condensed_ub_var, J_cond.Matrix_condensed_lb_con, J_cond.Matrix_condensed_ub_con
           )
+    if full_condense_error > 0
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
     
     condensed_nVar = ccall(@dlsym(BSQP, "Condenser_condensed_nVar"), Cint, (Ptr{Cvoid},), cond)
     condensed_nCon = ccall(@dlsym(BSQP, "Condenser_condensed_nCon"), Cint, (Ptr{Cvoid},), cond)

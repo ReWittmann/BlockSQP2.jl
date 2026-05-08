@@ -18,11 +18,13 @@ Corleone = "2751e0db-33e9-4374-b36d-b7219e1e6b40"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 OptimizationBase = "bca83a33-5cc9-4baa-983d-23429ab6bcbb"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+OptimalControlBenchmarks = "d147904a-1eb9-11f1-01e7-bdf88e0f9445"
 
 [extensions]
 NLPlayoutsCorleone = ["LuxCore", "Corleone"]
 OptimizationExtension = "OptimizationBase"
 SymbolicsHessUtilities = ["OptimizationBase", "Symbolics"]
+OptimalControlBenchmarksExt = ["OptimalControlBenchmarks"]
 
 [compat]
 Aqua = "0.8.14"
@@ -36,6 +38,7 @@ Ipopt = "1"
 LinearAlgebra = "1"
 LuxCore = "1.5.3"
 OpenBLAS32_jll = "0.3.30"
+OptimalControlBenchmarks = "0.0.3"
 Optimization = "5.1"
 OptimizationBase = "4, 5"
 OptimizationMOI = "1"
