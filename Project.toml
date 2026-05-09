@@ -1,6 +1,6 @@
 name = "BlockSQP2"
 uuid = "eedde146-038c-472b-a63b-c8c70ebda014"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Christoph Plate <christoph.plate@ovgu.de>", "Reinhold Wittmann <reinhold.wittmann@ovgu.de>"]
 
 [deps]
