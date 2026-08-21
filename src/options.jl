@@ -24,7 +24,7 @@ mutable struct Options
     COL_tau_2::Cdouble
     OL_eps::Cdouble
     BFGS_damping_factor::Cdouble
-    conv_strategy::Cint
+    conv_strategy::Union{String, Symbol, Vector{Cchar}}
     max_conv_QPs::Cint
     enable_linesearch::Bool
     max_linesearch_steps::Cint
@@ -41,6 +41,8 @@ mutable struct Options
     par_QPs::Bool
     enable_QP_cancellation::Bool
     automatic_scaling::Bool
+    scaling_Theta_min::AbstractFloat
+    scaling_Theta_max::AbstractFloat
     enable_premature_termination::Bool
     indef_delay::Cint
     function Options(;
@@ -67,7 +69,7 @@ mutable struct Options
         COL_tau_2::AbstractFloat = 1.0e4,
         OL_eps::AbstractFloat = 1.0e-4,
         BFGS_damping_factor::AbstractFloat = 1/3,
-        conv_strategy::Integer = 1,
+        conv_strategy::Union{String, Symbol, Vector{Cchar}} = "full_regularization",
         max_conv_QPs::Integer = 4,
         enable_linesearch::Bool = true,
         max_linesearch_steps::Integer = 10,
@@ -84,6 +86,8 @@ mutable struct Options
         par_QPs::Bool = false,
         enable_QP_cancellation::Bool = true,
         automatic_scaling::Bool = false,
+        scaling_Theta_min::AbstractFloat = 0.1,
+        scaling_Theta_max::AbstractFloat = 2.0,
         enable_premature_termination::Bool = false,
         indef_delay::Integer = 3
     )
@@ -128,6 +132,8 @@ mutable struct Options
             par_QPs,
             enable_QP_cancellation,
             automatic_scaling,
+            scaling_Theta_min,
+            scaling_Theta_max,
             enable_premature_termination,
             indef_delay
         )
@@ -136,11 +142,11 @@ end
 
 
 mutable struct qpOASESoptions <: QPsolverOptions
-    sparsityLevel::Cint
+    matrixSparsity::Cint
     printLevel::Cint
     terminationTolerance::Cdouble
     function qpOASESoptions(;
-        sparsityLevel::Integer = 2,
+        matrixSparsity::Integer = -1,
         printLevel::Integer = 0,
         terminationTolerance::AbstractFloat = 5.0e6*2.221e-16
         )
@@ -213,13 +219,21 @@ function create_cxx_options(opts::Options)
     ccall(@dlsym(BSQP, "SQPoptions_set_BFGS_damping_factor"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.BFGS_damping_factor))
     
     # Convexification strategy
-    ccall(@dlsym(BSQP, "SQPoptions_set_conv_strategy"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.conv_strategy))
+    # ccall(@dlsym(BSQP, "SQPoptions_set_conv_strategy"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.conv_strategy))
+    ret = ccall(@dlsym(BSQP, "SQPoptions_set_conv_strategy"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.conv_strategy)))))
+    if ret > 0
+        # error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+        print("ERROR: ", unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    
     ccall(@dlsym(BSQP, "SQPoptions_set_max_conv_QPs"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_conv_QPs))
     ccall(@dlsym(BSQP, "SQPoptions_set_par_QPs"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.par_QPs))
     ccall(@dlsym(BSQP, "SQPoptions_set_enable_QP_cancellation"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_QP_cancellation))
     
     # Scaling
     ccall(@dlsym(BSQP, "SQPoptions_set_automatic_scaling"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.automatic_scaling))
+    ccall(@dlsym(BSQP, "SQPoptions_set_scaling_Theta_min"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.scaling_Theta_min))
+    ccall(@dlsym(BSQP, "SQPoptions_set_scaling_Theta_max"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.scaling_Theta_max))
     
     # Filter line search
     ccall(@dlsym(BSQP, "SQPoptions_set_enable_linesearch"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_linesearch))
@@ -237,7 +251,7 @@ function create_cxx_options(opts::Options)
     end
     if typeof(opts.qpsol_options) == qpOASESoptions
         QPsolver_options_obj = ccall(@dlsym(BSQP, "create_qpOASES_options"), Ptr{Cvoid}, ())
-        ccall(@dlsym(BSQP, "qpOASES_options_set_sparsityLevel"), Cvoid, (Ptr{Cvoid}, Cint), QPsolver_options_obj, Cint(opts.qpsol_options.sparsityLevel))
+        ccall(@dlsym(BSQP, "qpOASES_options_set_matrixSparsity"), Cvoid, (Ptr{Cvoid}, Cint), QPsolver_options_obj, Cint(opts.qpsol_options.matrixSparsity))
         ccall(@dlsym(BSQP, "qpOASES_options_set_printLevel"), Cvoid, (Ptr{Cvoid}, Cint), QPsolver_options_obj, Cint(opts.qpsol_options.printLevel))
         ccall(@dlsym(BSQP, "qpOASES_options_set_terminationTolerance"), Cvoid, (Ptr{Cvoid}, Cdouble), QPsolver_options_obj, Cdouble(opts.qpsol_options.terminationTolerance))
         ccall(@dlsym(BSQP, "SQPoptions_set_qpsol_options"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), SQPoptions_obj, QPsolver_options_obj)

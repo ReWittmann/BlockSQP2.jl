@@ -117,14 +117,14 @@ mutable struct Solver
             #Allocate vblocks
             vblock_array_obj = ccall(@dlsym(BSQP, "create_vblock_array"), Ptr{Cvoid}, (Cint, ), Cint(length(J_prob.vblocks)))
             for i = 1:length(J_prob.vblocks)
-                ccall(@dlsym(BSQP, "vblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cchar), vblock_array_obj, Cint(i - 1), Cint(J_prob.vblocks[i].size), Cchar(J_prob.vblocks[i].dependent))
+                ccall(@dlsym(BSQP, "vblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cchar, Cchar), vblock_array_obj, Cint(i - 1), Cint(J_prob.vblocks[i].size), Cchar(J_prob.vblocks[i].dependent), Cchar(J_prob.vblocks[i].bounds_implicit))
             end
             #Pass ownership of C++ allocated vblocks
             ccall(@dlsym(BSQP, "Problemspec_pass_vblocks"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}, Cint), new_Problemspec_obj, vblock_array_obj, Cint(length(J_prob.vblocks)))
         end
         
         if !isnothing(J_prob.condenser)
-            ccall(@dlsym(BSQP, "Problemspec_set_cond"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), new_Problemspec_obj, J_prob.condenser.Condenser_obj)
+            ccall(@dlsym(BSQP, "Problemspec_set_condenser"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), new_Problemspec_obj, J_prob.condenser.Condenser_obj)
         end
         
         #Create blockSQP and QPsolver options classes on the C++ side

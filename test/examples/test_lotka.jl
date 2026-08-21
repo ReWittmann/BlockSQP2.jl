@@ -191,6 +191,7 @@ sparse_forward_backend = AutoSparse(
 )
 
 using Optimization
+using Optimization.SciMLBase
 using OptimizationMOI
 using Ipopt
 
@@ -265,7 +266,7 @@ x_opt = ComponentArray(x_opt, layout.vLayout)
 
 opts.automatic_scaling = true
 opts.max_conv_QPs = 4
-opts.conv_strategy = 2
+opts.conv_strategy = "reduced_regularization"
 meth = BlockSQP2.Solver(prob_vblocks, opts, stats)
 BlockSQP2.init!(meth)
 BlockSQP2.run!(meth, 200, 0)

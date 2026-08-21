@@ -65,6 +65,7 @@ module BlockSQP2
     struct vblock
         size::Int64
         dependent::Bool 
+        bounds_implicit::Bool
     end
 
     struct cblock

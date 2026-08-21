@@ -83,13 +83,14 @@ using SafeTestsets
 
         prob = OptimizationProblem(optprob_wcons, [10.0, 10.0], Float64[], lcons = [0.0], ucons = [0.0])
         using Symbolics
+        using Optimization.SciMLBase
+        
         blockIdx_calc = BlockSQP2.compute_hessian_blocks(prob)
         sol_sparse_1 = solve(prob, BlockSQP2.Optimizer(); blockIdx=blockIdx_calc)
         sol_sparse_2 = solve(prob, BlockSQP2.Optimizer(); blockIdx=[0,1,2])
         options = BlockSQP2.Options(sparse=true, hess_approx=:SR1)
         sol_sparse_3 = solve(prob, BlockSQP2.Optimizer(); options=options)
-        @test SciMLBase.successful_retcode(sol_sparse_1) && SciMLBase.successful_retcode(sol_sparse_2) &&
-                SciMLBase.successful_retcode(sol_sparse_3)
+        @test SciMLBase.successful_retcode(sol_sparse_1) && SciMLBase.successful_retcode(sol_sparse_2) && SciMLBase.successful_retcode(sol_sparse_3)
         @test isapprox(sol_sparse_1.u, sol_sparse_2.u; atol = 1e-5)
         @test isapprox(sol_sparse_2.u, sol_sparse_3.u; atol = 1e-5)
     end

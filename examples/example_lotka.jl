@@ -217,6 +217,9 @@ jac_gNZ(x) = jacobian(g, sparse_forward_backend, x).nzval
 
 condenser = BlockSQP2.Condenser(layout)
 
+
+vblocks = BlockSQP2.create_vblocks(layout)
+print(vblocks)
 ("BlockSQP2 allows passing sparse Jacobians, so it will have a runtime advantage.\n")
 # alternative: prob = BlockSQPProblem(...)
 prob = BlockSQP2.Problem(
@@ -230,7 +233,7 @@ opts = BlockSQP2.sparse_options()
 opts.max_extra_steps = 0
 opts.automatic_scaling = true
 opts.max_conv_QPs = 4
-opts.conv_strategy = 2
+opts.conv_strategy = "reduced_regularization"
 stats = BlockSQP2.Stats("./")
 
 meth = BlockSQP2.Solver(prob, opts, stats)

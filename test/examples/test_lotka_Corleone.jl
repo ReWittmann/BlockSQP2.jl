@@ -103,8 +103,8 @@ uopt_default = solve(
 )
 @test SciMLBase.successful_retcode(uopt_default)
 
-opts.automatic_scaling = true
-opts.conv_strategy = 2
+opts.automatic_scaling = false #Have to disable for now
+opts.conv_strategy = "reduced_regularization"
 vblocks = create_vblocks(nlplayout)
 uopt_structure = solve(
     optprob, BlockSQP2.Optimizer(),

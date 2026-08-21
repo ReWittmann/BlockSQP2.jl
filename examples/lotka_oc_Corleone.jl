@@ -97,7 +97,7 @@ opt_BSQP_sparse = BlockSQP2.sparse_options()
 opt_BSQP_sparse.enable_premature_termination = true
 opt_BSQP_sparse.max_extra_steps = 1
 opt_BSQP_sparse.par_QPs = false  #Disabled in some builds, so set to false
-opt_BSQP_sparse.automatic_scaling = true
+opt_BSQP_sparse.automatic_scaling = false
 
 # Experimental: Extract structure of NLP from Corleone data structures
 using BlockSQP2.NLPlayouts: get_layout, hessBlockIndexZeroBased
@@ -105,6 +105,7 @@ nlplayout = get_layout(mslayer, msps, msst)
 
 blockIdx = hessBlockIndexZeroBased(nlplayout)
 vblocks = create_vblocks(nlplayout) # variable blocks/sections, only marks free and dependent sections for now.
+
 condenser = BlockSQP2.Condenser(nlplayout)
 uopt = solve(
     optprob, BlockSQP2.Optimizer(),
@@ -112,7 +113,7 @@ uopt = solve(
     options = opt_BSQP_sparse,
     blockIdx = blockIdx,
     vblocks = vblocks,
-    # condenser = condenser, # Unfortunately, we dont have a suitable QP solver that really benefits from condensing yet.
+    # condenser = condenser, # TODO: Enable partial condensing in julia
     maxiters = 300,
 )
 

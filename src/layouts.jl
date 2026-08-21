@@ -4,7 +4,7 @@ using .NLPlayouts
 Create vblocks (variable block information) for blockSQP, not to be confused with NLPlayout.vBlocks, NLPlayouts.simple_vBlockes etc.
 """
 function create_vblocks(struc::NLPlayout)
-    return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, nlpMSdependent))
+    return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, nlpMSdependent), false)
 end
 
 function create_condenser_args(struc::NLPlayout, add_dep_bounds = :all) #:none, :inactive, :all
@@ -19,7 +19,7 @@ function create_condenser_args(struc::NLPlayout, add_dep_bounds = :all) #:none, 
     vBlocks = simple_vBlocks(struc)
     hBlocks = hessBlocks(struc)
     
-    vblocks_args = [(size = length(struc.vLayout[x].idx), dependent = [false]) for x in vBlocks]
+    vblocks_args = [(size = length(struc.vLayout[x].idx), dependent = [false], bounds_implicit = [false]) for x in vBlocks]
     
     cblocks = cBlocks .|> x -> cblock(length(struc.cLayout[x].idx))
     
@@ -41,7 +41,7 @@ function create_condenser_args(struc::NLPlayout, add_dep_bounds = :all) #:none, 
         push!(targets, condensing_target(N, i0-1, i1, j0-1, j1)) 
     end
     
-    vblocks = vblocks_args .|> x->vblock(x.size, x.dependent[1])
+    vblocks = vblocks_args .|> x->vblock(x.size, x.dependent[1], x.bounds_implicit[1])
     return vblocks, cblocks, hsizes, targets, add_dep_bounds
 end
 
