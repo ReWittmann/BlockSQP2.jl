@@ -137,6 +137,18 @@ uopt_condensing = solve(
 )
 @test SciMLBase.successful_retcode(uopt_condensing)
 
+partialCondenser = BlockSQP2.PartialCondenser(nlplayout, 4)
+uopt_condensing = solve(
+    optprob, BlockSQP2.Optimizer(),
+    opttol = 1.0e-6,
+    options = opts,
+    blockIdx = blockIdx,
+    vblocks = vblocks,
+    condenser = partialCondenser,
+    maxiters = 300,
+)
+@test SciMLBase.successful_retcode(uopt_condensing)
+
 
 @test all(isapprox(s.objective, 1.3443364833694484; atol = 1e-5) for s in (uopt_default, uopt_structure, uopt_condensing))
 @test all(isapprox(opt_f(s), 1.3443364833694484; atol = 1e-5) for s in (uopt_default, uopt_structure, uopt_condensing))

@@ -216,7 +216,8 @@ COLIND = jac_g0.colptr .-1
 
 jac_gNZ(x) = jacobian(g, sparse_forward_backend, x).nzval
 
-condenser = BlockSQP2.Condenser(layout)
+# condenser = BlockSQP2.Condenser(layout)
+condenser = BlockSQP2.PartialCondenser(layout, 4)
 
 
 vblocks = BlockSQP2.create_vblocks(layout)
@@ -248,6 +249,7 @@ x_opt = BlockSQP2.get_primal_solution(meth)
 x_opt = ComponentArray(x_opt, layout.vLayout)
 
 using CairoMakie
+using GLMakie
 
 opt_x = hcat(x_init, (states .|> st -> x_opt[st]) |> splat(hcat))
 opt_u = (controls .|> ctrl -> x_opt[ctrl]) |> splat(hcat)
@@ -259,9 +261,12 @@ lines!(Tgrid, opt_x[1,:], label = "x₁")
 lines!(Tgrid, opt_x[2,:], label = "x₂")
 stairs!(Tgrid[1:end-1], opt_u[1,:], label = "u", color = :red3)
 fig[1, 2] = Legend(fig, ax, framevisible = false)
-display(fig)
 
+deactivate_interaction!(ax, :scrollzoom)
+deactivate_interaction!(ax, :dragpan)
+deactivate_interaction!(ax, :rectanglezoom)
 
-
+screen = display(fig)
+wait(screen)
 
 

@@ -7,7 +7,7 @@ function create_vblocks(struc::NLPlayout)
     return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, nlpMSdependent), false)
 end
 
-function create_condenser_args(struc::NLPlayout, add_dep_bounds = :all) #:none, :inactive, :all
+function create_condenser_args(struc::NLPlayout)
     Dtargets = filter(x->(blocktypeof(x) <: nlpMultipleShootingDF), struc.vBlocks)
     if length(Dtargets) == 0
         return (nothing,)
@@ -42,10 +42,15 @@ function create_condenser_args(struc::NLPlayout, add_dep_bounds = :all) #:none, 
     end
     
     vblocks = vblocks_args .|> x->vblock(x.size, x.dependent[1], x.bounds_implicit[1])
-    return vblocks, cblocks, hsizes, targets, add_dep_bounds
+    return vblocks, cblocks, hsizes, targets
 end
 
-function Condenser(struc::NLPlayout, add_dep_bounds = :all)
+function Condenser(struc::NLPlayout, add_dep_bounds::Integer = 1)
     @warn "Creating a Condenser from an NLPlayout is highly experimental for now"
-    return Condenser(create_condenser_args(struc, add_dep_bounds)...)
+    return Condenser(create_condenser_args(struc)..., add_dep_bounds)
+end
+
+function PartialCondenser(struc::NLPlayout, N_pcond::INT_T, add_dep_bounds::INT_T = 1) where INT_T <: Integer
+    @warn "Creating a (Partial)Condenser from an NLPlayout is highly experimental for now"
+    return PartialCondenser(create_condenser_args(struc)..., N_pcond, add_dep_bounds)
 end

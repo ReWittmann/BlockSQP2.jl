@@ -116,6 +116,6 @@ xi_cond = condensed_results.x
 lam_cond = condensed_results.y
 xi_rest, lam_rest = BlockSQP2.recover_var_mult(condenser, xi_cond, lam_cond)
 
-print("\n||xi - xi_rest||_∞ = ", maximum(xi - xi_rest))
-print("\n||lam - lam_rest||_∞ ", maximum(lam - lam_rest), "\n")
+print("\n||xi - xi_rest||_∞ = ", maximum((xi - xi_rest) .|> abs))
+print("\n||lam - lam_rest||_∞ ", maximum((lam - lam_rest) .|> abs), "\n")
 

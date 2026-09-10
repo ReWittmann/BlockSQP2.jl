@@ -6,6 +6,7 @@ using LuxCore
 using Random
 
 using CairoMakie
+using GLMakie
 using Optimization
 using OptimizationMOI
 
@@ -106,14 +107,14 @@ nlplayout = get_layout(mslayer, msps, msst)
 blockIdx = hessBlockIndexZeroBased(nlplayout)
 vblocks = create_vblocks(nlplayout) # variable blocks/sections, only marks free and dependent sections for now.
 
-condenser = BlockSQP2.Condenser(nlplayout)
+condenser = BlockSQP2.PartialCondenser(nlplayout, 4)
 uopt = solve(
     optprob, BlockSQP2.Optimizer(),
     opttol = 1.0e-6,
     options = opt_BSQP_sparse,
     blockIdx = blocks,
     vblocks = vblocks,
-    # condenser = condenser, # TODO: Enable partial condensing in julia
+    condenser = condenser,
     maxiters = 300,
 )
 
@@ -126,4 +127,9 @@ f[1, 2] = Legend(f, ax, "States", framevisible = false)
 ax1 = CairoMakie.Axis(f[2, 1])
 stairs!(ax1, mssol, vars = [:fishing])
 f[2, 2] = Legend(f, ax1, "Controls", framevisible = false)
-display(f)
+
+deactivate_interaction!(ax, :scrollzoom)
+deactivate_interaction!(ax, :dragpan)
+deactivate_interaction!(ax, :rectanglezoom)
+screen = display(f)
+wait(screen)

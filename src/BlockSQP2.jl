@@ -21,21 +21,21 @@ module BlockSQP2
     const libblockSQP2 = Ref{Ptr{Nothing}}(Ptr{Nothing}())
     
     ### Release version: Load BlockSQP2 via blockSQP2_jll ###
-        import blockSQP2_jll
-        import LinearAlgebra
-        import OpenBLAS32_jll
+        # import blockSQP2_jll
+        # import LinearAlgebra
+        # import OpenBLAS32_jll
         
-        function __init__()
-            LinearAlgebra.BLAS.lbt_forward(OpenBLAS32_jll.libopenblas_path)
-            libblockSQP2[] = Base.Libc.Libdl.dlopen(blockSQP2_jll.libblockSQP2_jl)
-        end
+        # function __init__()
+        #     LinearAlgebra.BLAS.lbt_forward(OpenBLAS32_jll.libopenblas_path)
+        #     libblockSQP2[] = Base.Libc.Libdl.dlopen(blockSQP2_jll.libblockSQP2_jl)
+        # end
     ### End ###
     
     ### Development version: Use locally built BlockSQP2_jl ###
-        # function __dev__()
-        #     libblockSQP2[] = Base.Libc.Libdl.dlopen(joinpath(Base.@__DIR__, "..", "bin", "libblockSQP2_jl"))
-        # end
-        # __init__() = __dev__()
+        function __dev__()
+            libblockSQP2[] = Base.Libc.Libdl.dlopen(joinpath(Base.@__DIR__, "..", "bin", "libblockSQP2_jl"))
+        end
+        __init__() = __dev__()
     ### End ###
     
     
@@ -66,6 +66,8 @@ module BlockSQP2
         size::Int64
         dependent::Bool 
         bounds_implicit::Bool
+        
+        vblock(arg_size, arg_dependent, arg_bounds_implicit = false) = new(arg_size, arg_dependent, arg_bounds_implicit)
     end
 
     struct cblock

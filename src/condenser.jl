@@ -40,24 +40,10 @@ mutable struct Condenser
     Matrix_xi_rest::Ptr{Cvoid}
     Matrix_lambda_rest::Ptr{Cvoid}
     
-    Condenser(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}, arg_dep_bounds::INT_T = 2) where INT_T <: Integer = begin
+    function Condenser(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}, arg_dep_bounds::INT_T = INT_T(1)) where INT_T <: Integer
         BSQP = libblockSQP2[]
-        new_vblock_array_obj = ccall(@dlsym(BSQP, "create_vblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_vblocks)))
-        for i = 1:length(arg_vblocks)
-            ccall(@dlsym(BSQP, "vblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cchar, Cchar), new_vblock_array_obj, Cint(i - 1), Cint(arg_vblocks[i].size), Cchar(arg_vblocks[i].dependent), Cchar(arg_vblocks[i].bounds_implicit))
-        end
-        new_cblock_array_obj = ccall(@dlsym(BSQP, "create_cblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_cblocks)))
-        for i = 1:length(arg_cblocks)
-            ccall(@dlsym(BSQP, "cblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_cblock_array_obj, Cint(i - 1), Cint(arg_cblocks[i].size))
-        end
-        new_hsize_array_obj = ccall(@dlsym(BSQP, "create_hsize_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_hsizes)))
-        for i = 1:length(arg_hsizes)
-            ccall(@dlsym(BSQP, "hsize_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_hsize_array_obj, Cint(i - 1), Cint(arg_hsizes[i]))
-        end
-        new_target_array_obj = ccall(@dlsym(BSQP, "create_target_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_targets)))
-        for i = 1:length(arg_targets)
-            ccall(@dlsym(BSQP, "target_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cint, Cint, Cint, Cint), new_target_array_obj, Cint(i - 1), Cint(arg_targets[i].n_stages), Cint(arg_targets[i].vblock_start), Cint(arg_targets[i].vblock_end), Cint(arg_targets[i].cblock_start), Cint(arg_targets[i].cblock_end))
-        end
+        
+        new_vblock_array_obj, new_cblock_array_obj, new_hsize_array_obj, new_target_array_obj = create_array_objects(arg_vblocks, arg_cblocks, arg_hsizes, arg_targets)
         
         Condenser_obj = ccall(@dlsym(BSQP, "create_Condenser"), Ptr{Cvoid}, (Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Cint), new_vblock_array_obj, Cint(length(arg_vblocks)), new_cblock_array_obj, Cint(length(arg_cblocks)), new_hsize_array_obj, Cint(length(arg_hsizes)), new_target_array_obj, Cint(length(arg_targets)), Cint(arg_dep_bounds))
         if Condenser_obj == C_NULL
@@ -67,7 +53,11 @@ mutable struct Condenser
             ccall(@dlsym(BSQP, "delete_vblock_array"), Cvoid, (Ptr{Cvoid},), J_cond.vblock_array_obj)
             error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
         end
-        
+        Condenser(Condenser_obj, new_vblock_array_obj, new_cblock_array_obj, new_hsize_array_obj, new_target_array_obj)
+    end
+    
+    Condenser(Condenser_obj::Ptr{Cvoid}, new_vblock_array_obj::Ptr{Cvoid}, new_cblock_array_obj::Ptr{Cvoid}, new_hsize_array_obj::Ptr{Cvoid}, new_target_array_obj::Ptr{Cvoid}) = begin
+        BSQP = libblockSQP2[]
         nVar = ccall(@dlsym(BSQP, "Condenser_nVar"), Cint, (Ptr{Cvoid},), Condenser_obj)
         nCon = ccall(@dlsym(BSQP, "Condenser_nCon"), Cint, (Ptr{Cvoid},), Condenser_obj)
         nBlocks = ccall(@dlsym(BSQP, "Condenser_nBlocks"), Cint, (Ptr{Cvoid},), Condenser_obj)
@@ -76,7 +66,7 @@ mutable struct Condenser
         new_constr_jac = ccall(@dlsym(BSQP, "create_Sparse_Matrix_default"), Ptr{Cvoid}, ())
         new_hess = ccall(@dlsym(BSQP, "create_SymMatrix_array"), Ptr{Cvoid}, (Cint,), nBlocks)
         for i = Cint(1):nBlocks
-            ccall(@dlsym(BSQP, "SymMatrix_array_index_resize"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_hess, Cint(i - 1), Cint(arg_hsizes[i]))
+            ccall(@dlsym(BSQP, "SymMatrix_array_index_resize"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_hess, Cint(i - 1), ccall(@dlsym(BSQP, "hsize_array_get"), Cint, (Ptr{Cvoid}, Cint), new_hsize_array_obj, Cint(i - 1)))#Cint(arg_hsizes[i]))
         end
         new_lb_var = ccall(@dlsym(BSQP, "create_Matrix"), Ptr{Cvoid}, (Cint, Cint), nVar, Cint(1));
         new_ub_var = ccall(@dlsym(BSQP, "create_Matrix"), Ptr{Cvoid}, (Cint, Cint), nVar, Cint(1));
@@ -141,14 +131,30 @@ mutable struct Condenser
         end
         finalizer(Condenser_finalizer!, new_Condenser)
     end
-    
-    function Condenser(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}, arg_dep_bounds::Symbol) where INT_T <: Integer
-        mp = (none = INT_T(0), inactive = INT_T(1), all = INT_T(2))
-        Condenser(arg_vblocks, arg_cblocks, arg_hsizes, arg_targets, mp[Symbol(lowercase(string(arg_dep_bounds)))])
-    end
 end
 
 Condenser(::Nothing) = nothing
+
+function create_array_objects(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}) where INT_T <: Integer
+    BSQP = libblockSQP2[]
+    new_vblock_array_obj = ccall(@dlsym(BSQP, "create_vblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_vblocks)))
+    for i = 1:length(arg_vblocks)
+        ccall(@dlsym(BSQP, "vblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cchar, Cchar), new_vblock_array_obj, Cint(i - 1), Cint(arg_vblocks[i].size), Cchar(arg_vblocks[i].dependent), Cchar(arg_vblocks[i].bounds_implicit))
+    end
+    new_cblock_array_obj = ccall(@dlsym(BSQP, "create_cblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_cblocks)))
+    for i = 1:length(arg_cblocks)
+        ccall(@dlsym(BSQP, "cblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_cblock_array_obj, Cint(i - 1), Cint(arg_cblocks[i].size))
+    end
+    new_hsize_array_obj = ccall(@dlsym(BSQP, "create_hsize_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_hsizes)))
+    for i = 1:length(arg_hsizes)
+        ccall(@dlsym(BSQP, "hsize_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_hsize_array_obj, Cint(i - 1), Cint(arg_hsizes[i]))
+    end
+    new_target_array_obj = ccall(@dlsym(BSQP, "create_target_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_targets)))
+    for i = 1:length(arg_targets)
+        ccall(@dlsym(BSQP, "target_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cint, Cint, Cint, Cint), new_target_array_obj, Cint(i - 1), Cint(arg_targets[i].n_stages), Cint(arg_targets[i].vblock_start), Cint(arg_targets[i].vblock_end), Cint(arg_targets[i].cblock_start), Cint(arg_targets[i].cblock_end))
+    end
+    return new_vblock_array_obj, new_cblock_array_obj, new_hsize_array_obj, new_target_array_obj
+end
 
 function print_info(J_cond::Condenser)
     BSQP = libblockSQP2[]
@@ -376,30 +382,18 @@ function recover_var_mult(J_cond::Condenser, xi_cond::Array{Float64, 1}, lambda_
     return xi_rest, lambda_rest
 end
 
-
-# mutable struct PartialCondenser
-#     base::Condenser
+function PartialCondenser(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}, arg_N_pcond::INT_T, arg_dep_bounds::INT_T = 1) where INT_T <: Integer
+    BSQP = libblockSQP2[]
     
-#     Condenser(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}, arg_N_pcond, arg_dep_bounds::INT_T = 2) where INT_T <: Integer = begin
-#         BSQP = libblockSQP2[]
-#         new_vblock_array_obj = ccall(@dlsym(BSQP, "create_vblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_vblocks)))
-#         for i = 1:length(arg_vblocks)
-#             ccall(@dlsym(BSQP, "vblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cchar, Cchar), new_vblock_array_obj, Cint(i - 1), Cint(arg_vblocks[i].size), Cchar(arg_vblocks[i].dependent), Cchar(arg_vblocks[i].bounds_implicit))
-#         end
-#         new_cblock_array_obj = ccall(@dlsym(BSQP, "create_cblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_cblocks)))
-#         for i = 1:length(arg_cblocks)
-#             ccall(@dlsym(BSQP, "cblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_cblock_array_obj, Cint(i - 1), Cint(arg_cblocks[i].size))
-#         end
-#         new_hsize_array_obj = ccall(@dlsym(BSQP, "create_hsize_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_hsizes)))
-#         for i = 1:length(arg_hsizes)
-#             ccall(@dlsym(BSQP, "hsize_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_hsize_array_obj, Cint(i - 1), Cint(arg_hsizes[i]))
-#         end
-#         new_target_array_obj = ccall(@dlsym(BSQP, "create_target_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_targets)))
-#         for i = 1:length(arg_targets)
-#             ccall(@dlsym(BSQP, "target_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cint, Cint, Cint, Cint), new_target_array_obj, Cint(i - 1), Cint(arg_targets[i].n_stages), Cint(arg_targets[i].vblock_start), Cint(arg_targets[i].vblock_end), Cint(arg_targets[i].cblock_start), Cint(arg_targets[i].cblock_end))
-#         end
-        
-#         Condenser_obj = ccall(@dlsym(BSQP, "create_PartialCondenser"), Ptr{Cvoid}, (Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Cint, Cint), new_vblock_array_obj, Cint(length(arg_vblocks)), new_cblock_array_obj, Cint(length(arg_cblocks)), new_hsize_array_obj, Cint(length(arg_hsizes)), new_target_array_obj, Cint(length(arg_targets)), Cint(arg_N_pcond), Cint(arg_dep_bounds))
-#     end
+    new_vblock_array_obj, new_cblock_array_obj, new_hsize_array_obj, new_target_array_obj = create_array_objects(arg_vblocks, arg_cblocks, arg_hsizes, arg_targets)
     
-# end
+    Condenser_obj = ccall(@dlsym(BSQP, "create_PartialCondenser"), Ptr{Cvoid}, (Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Cint, Cint), new_vblock_array_obj, Cint(length(arg_vblocks)), new_cblock_array_obj, Cint(length(arg_cblocks)), new_hsize_array_obj, Cint(length(arg_hsizes)), new_target_array_obj, Cint(length(arg_targets)), Cint(arg_N_pcond), Cint(arg_dep_bounds))
+    if Condenser_obj == C_NULL
+        ccall(@dlsym(BSQP, "delete_target_array"), Cvoid, (Ptr{Cvoid},), J_cond.target_array_obj)
+        ccall(@dlsym(BSQP, "delete_hsize_array"), Cvoid, (Ptr{Cvoid},), J_cond.hsize_array_obj)
+        ccall(@dlsym(BSQP, "delete_cblock_array"), Cvoid, (Ptr{Cvoid},), J_cond.cblock_array_obj)
+        ccall(@dlsym(BSQP, "delete_vblock_array"), Cvoid, (Ptr{Cvoid},), J_cond.vblock_array_obj)
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+    end
+    return Condenser(Condenser_obj, new_vblock_array_obj, new_cblock_array_obj, new_hsize_array_obj, new_target_array_obj)
+end

@@ -41,9 +41,9 @@ A_con = to_dense(7,10,NZ,ROW,COLIND)
 
 print("###########################################\nQP info:\nH = \n")
 display(H)
-print("\n h = \n")
+print("\nh = \n")
 display(grad_obj)
-print("A = \n")
+print("\nA = \n")
 display(A_con)
 print("\nlb_var, ub_var = \n")
 display(lb_var)
@@ -60,28 +60,28 @@ A = vcat(ID,A_con)
 
 #Create structure data
 vblocks = Array{BlockSQP2.vblock, 1}(undef, 7)
-vblocks[1] = BlockSQP2.vblock(Int32(1), false)
+vblocks[1] = BlockSQP2.vblock(1, false)
 
-vblocks[2] = BlockSQP2.vblock(Int32(2), true)
-vblocks[3] = BlockSQP2.vblock(Int32(1), false)
+vblocks[2] = BlockSQP2.vblock(2, true)
+vblocks[3] = BlockSQP2.vblock(1, false)
 
-vblocks[4] = BlockSQP2.vblock(Int32(2), true)
-vblocks[5] = BlockSQP2.vblock(Int32(1), false)
+vblocks[4] = BlockSQP2.vblock(2, true)
+vblocks[5] = BlockSQP2.vblock(1, false)
 
-vblocks[6] = BlockSQP2.vblock(Int32(2), true)
-vblocks[7] = BlockSQP2.vblock(Int32(1), false)
+vblocks[6] = BlockSQP2.vblock(2, true)
+vblocks[7] = BlockSQP2.vblock(1, false)
 
 cblocks = Array{BlockSQP2.cblock, 1}(undef, 4)
-cblocks[1] = BlockSQP2.cblock(Int32(2))
-cblocks[2] = BlockSQP2.cblock(Int32(2))
-cblocks[3] = BlockSQP2.cblock(Int32(2))
-cblocks[4] = BlockSQP2.cblock(Int32(1))
+cblocks[1] = BlockSQP2.cblock(2)
+cblocks[2] = BlockSQP2.cblock(2)
+cblocks[3] = BlockSQP2.cblock(2)
+cblocks[4] = BlockSQP2.cblock(1)
 
 hsizes = Int32[1, 3, 3, 3]
 
 targets = Array{BlockSQP2.condensing_target, 1}(undef, 1)
 #3 stages, index of first free vblock, index after last dependent vblock, index of first condition, index after last condition
-targets[1] = BlockSQP2.condensing_target(Int32(3), Int32(0), Int32(7), Int32(0), Int32(3))
+targets[1] = BlockSQP2.condensing_target(3, 0, 7, 0, 3)
 
 condenser = BlockSQP2.Condenser(vblocks, cblocks, hsizes, targets, Int32(2))
 
@@ -139,7 +139,7 @@ QPALM.setup!(model, Q=conDENSEd_hess, q=condensed_h, A=A_2,
 condensed_results = QPALM.solve!(model)
 
 xi_cond = condensed_results.x
-lam_cond = condensed_results.y
+lam_cond = -condensed_results.y  #QPALM define Lagrangian as f + lamT * g, while blockSQP2 defines it as f - lamT * g  --> need to change sign of multipliers
 
 print("\nPrimal solution of uncondensed QP:\n")
 display(xi)
@@ -151,12 +151,13 @@ print("\nDual solution of condensed QP:\n")
 display(lam_cond)
 
 xi_rest, lam_rest = BlockSQP2.recover_var_mult(condenser, xi_cond, lam_cond)
+lam_rest *= -1  #revert sign
 
 print("\nPrimal restored solution:\n")
 display(xi_rest)
 print("\nDual restored solution:\n")
 display(lam_rest)
-print("\n||xi - xi_rest||_∞ = ", maximum(xi - xi_rest))
-print("\n||lam - lam_rest||_∞ ", maximum(lam - lam_rest), "\n")
+print("\n||xi - xi_rest||_∞ = ", maximum((xi - xi_rest) .|> abs))
+print("\n||lam - lam_rest||_∞ ", maximum((lam - lam_rest) .|> abs), "\n")
 
 
