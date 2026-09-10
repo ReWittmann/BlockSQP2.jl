@@ -111,7 +111,7 @@ uopt = solve(
     optprob, BlockSQP2.Optimizer(),
     opttol = 1.0e-6,
     options = opt_BSQP_sparse,
-    blockIdx = blockIdx,
+    blockIdx = blocks,
     vblocks = vblocks,
     # condenser = condenser, # TODO: Enable partial condensing in julia
     maxiters = 300,

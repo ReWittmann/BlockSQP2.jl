@@ -59,7 +59,6 @@ mutable struct Condenser
             ccall(@dlsym(BSQP, "target_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cint, Cint, Cint, Cint), new_target_array_obj, Cint(i - 1), Cint(arg_targets[i].n_stages), Cint(arg_targets[i].vblock_start), Cint(arg_targets[i].vblock_end), Cint(arg_targets[i].cblock_start), Cint(arg_targets[i].cblock_end))
         end
         
-        # Pass ownership of vblock_array, cblock_array, hsize_array, target_array
         Condenser_obj = ccall(@dlsym(BSQP, "create_Condenser"), Ptr{Cvoid}, (Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Cint), new_vblock_array_obj, Cint(length(arg_vblocks)), new_cblock_array_obj, Cint(length(arg_cblocks)), new_hsize_array_obj, Cint(length(arg_hsizes)), new_target_array_obj, Cint(length(arg_targets)), Cint(arg_dep_bounds))
         if Condenser_obj == C_NULL
             ccall(@dlsym(BSQP, "delete_target_array"), Cvoid, (Ptr{Cvoid},), J_cond.target_array_obj)
@@ -378,3 +377,29 @@ function recover_var_mult(J_cond::Condenser, xi_cond::Array{Float64, 1}, lambda_
 end
 
 
+# mutable struct PartialCondenser
+#     base::Condenser
+    
+#     Condenser(arg_vblocks::Vector{vblock}, arg_cblocks::Vector{cblock}, arg_hsizes::Vector{INT_T}, arg_targets::Vector{condensing_target}, arg_N_pcond, arg_dep_bounds::INT_T = 2) where INT_T <: Integer = begin
+#         BSQP = libblockSQP2[]
+#         new_vblock_array_obj = ccall(@dlsym(BSQP, "create_vblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_vblocks)))
+#         for i = 1:length(arg_vblocks)
+#             ccall(@dlsym(BSQP, "vblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cchar, Cchar), new_vblock_array_obj, Cint(i - 1), Cint(arg_vblocks[i].size), Cchar(arg_vblocks[i].dependent), Cchar(arg_vblocks[i].bounds_implicit))
+#         end
+#         new_cblock_array_obj = ccall(@dlsym(BSQP, "create_cblock_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_cblocks)))
+#         for i = 1:length(arg_cblocks)
+#             ccall(@dlsym(BSQP, "cblock_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_cblock_array_obj, Cint(i - 1), Cint(arg_cblocks[i].size))
+#         end
+#         new_hsize_array_obj = ccall(@dlsym(BSQP, "create_hsize_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_hsizes)))
+#         for i = 1:length(arg_hsizes)
+#             ccall(@dlsym(BSQP, "hsize_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint), new_hsize_array_obj, Cint(i - 1), Cint(arg_hsizes[i]))
+#         end
+#         new_target_array_obj = ccall(@dlsym(BSQP, "create_target_array"), Ptr{Cvoid}, (Cint,), Cint(length(arg_targets)))
+#         for i = 1:length(arg_targets)
+#             ccall(@dlsym(BSQP, "target_array_set"), Cvoid, (Ptr{Cvoid}, Cint, Cint, Cint, Cint, Cint, Cint), new_target_array_obj, Cint(i - 1), Cint(arg_targets[i].n_stages), Cint(arg_targets[i].vblock_start), Cint(arg_targets[i].vblock_end), Cint(arg_targets[i].cblock_start), Cint(arg_targets[i].cblock_end))
+#         end
+        
+#         Condenser_obj = ccall(@dlsym(BSQP, "create_PartialCondenser"), Ptr{Cvoid}, (Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Ptr{Cvoid}, Cint, Cint, Cint), new_vblock_array_obj, Cint(length(arg_vblocks)), new_cblock_array_obj, Cint(length(arg_cblocks)), new_hsize_array_obj, Cint(length(arg_hsizes)), new_target_array_obj, Cint(length(arg_targets)), Cint(arg_N_pcond), Cint(arg_dep_bounds))
+#     end
+    
+# end

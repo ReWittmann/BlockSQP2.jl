@@ -187,6 +187,7 @@ sparse_forward_backend = AutoSparse(
 
 
 using Optimization
+using Optimization.SciMLBase
 using OptimizationMOI
 using Ipopt
 
@@ -219,7 +220,7 @@ condenser = BlockSQP2.Condenser(layout)
 
 
 vblocks = BlockSQP2.create_vblocks(layout)
-print(vblocks)
+
 ("BlockSQP2 allows passing sparse Jacobians, so it will have a runtime advantage.\n")
 # alternative: prob = BlockSQPProblem(...)
 prob = BlockSQP2.Problem(
