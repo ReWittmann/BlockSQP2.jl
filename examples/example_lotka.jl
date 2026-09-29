@@ -236,6 +236,9 @@ opts.max_extra_steps = 0
 opts.automatic_scaling = true
 opts.max_conv_QPs = 4
 opts.conv_strategy = "reduced_regularization"
+
+opts.print_level = 2
+opts.print_colored = true
 stats = BlockSQP2.Stats("./")
 
 meth = BlockSQP2.Solver(prob, opts, stats)

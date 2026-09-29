@@ -5,7 +5,7 @@ mutable struct Options
     eps::Cdouble
     inf::Cdouble
     print_level::Cint
-    result_print_color::Cint
+    print_colored::Bool
     debug_level::Cint
     opt_tol::Cdouble
     feas_tol::Cdouble
@@ -49,8 +49,8 @@ mutable struct Options
         maxiters::Integer = 100,
         eps::AbstractFloat = 1.0e-16,
         inf::AbstractFloat = Inf,
-        print_level::Integer = 2,
-        result_print_color::Integer = 2,
+        print_level::Integer = 1,
+        print_colored::Bool = true,
         debug_level::Integer = 0,
         opt_tol::AbstractFloat = 1.0e-6,
         feas_tol::AbstractFloat = 1.0e-6,
@@ -96,7 +96,7 @@ mutable struct Options
             eps,
             inf,
             print_level,
-            result_print_color,
+            print_colored,
             debug_level,
             opt_tol,
             feas_tol,
@@ -165,7 +165,7 @@ function create_cxx_options(opts::Options)
     
     # Output
     ccall(@dlsym(BSQP, "SQPoptions_set_print_level"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.print_level))
-    ccall(@dlsym(BSQP, "SQPoptions_set_result_print_color"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.result_print_color))
+    ccall(@dlsym(BSQP, "SQPoptions_set_print_colored"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cchar(opts.print_colored))
     ccall(@dlsym(BSQP, "SQPoptions_set_debug_level"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.debug_level))
     
     # Termination criteria
