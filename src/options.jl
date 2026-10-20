@@ -40,6 +40,7 @@ mutable struct Options
     max_filter_overrides::Cint
     par_QPs::Bool
     enable_QP_cancellation::Bool
+    max_auto_threads::Integer
     automatic_scaling::Bool
     scaling_Theta_min::AbstractFloat
     scaling_Theta_max::AbstractFloat
@@ -85,6 +86,7 @@ mutable struct Options
         max_filter_overrides::Integer = 2,
         par_QPs::Bool = false,
         enable_QP_cancellation::Bool = true,
+        max_auto_threads::Integer = 7,
         automatic_scaling::Bool = false,
         scaling_Theta_min::AbstractFloat = 0.1,
         scaling_Theta_max::AbstractFloat = 2.0,
@@ -131,6 +133,7 @@ mutable struct Options
             max_filter_overrides,
             par_QPs,
             enable_QP_cancellation,
+            max_auto_threads,
             automatic_scaling,
             scaling_Theta_min,
             scaling_Theta_max,
@@ -219,16 +222,15 @@ function create_cxx_options(opts::Options)
     ccall(@dlsym(BSQP, "SQPoptions_set_BFGS_damping_factor"), Cvoid, (Ptr{Cvoid}, Cdouble), SQPoptions_obj, Cdouble(opts.BFGS_damping_factor))
     
     # Convexification strategy
-    # ccall(@dlsym(BSQP, "SQPoptions_set_conv_strategy"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.conv_strategy))
     ret = ccall(@dlsym(BSQP, "SQPoptions_set_conv_strategy"), Cint, (Ptr{Cvoid}, Cstring), SQPoptions_obj, Cstring(pointer(ascii(string(opts.conv_strategy)))))
     if ret > 0
-        # error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
-        print("ERROR: ", unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
+        error(unsafe_string(ccall(@dlsym(BSQP, "get_error_message"), Ptr{Cchar}, ())))
     end
     
     ccall(@dlsym(BSQP, "SQPoptions_set_max_conv_QPs"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_conv_QPs))
     ccall(@dlsym(BSQP, "SQPoptions_set_par_QPs"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.par_QPs))
     ccall(@dlsym(BSQP, "SQPoptions_set_enable_QP_cancellation"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.enable_QP_cancellation))
+    ccall(@dlsym(BSQP, "SQPoptions_set_max_auto_threads"), Cvoid, (Ptr{Cvoid}, Cint), SQPoptions_obj, Cint(opts.max_auto_threads))
     
     # Scaling
     ccall(@dlsym(BSQP, "SQPoptions_set_automatic_scaling"), Cvoid, (Ptr{Cvoid}, Cchar), SQPoptions_obj, Cchar(opts.automatic_scaling))

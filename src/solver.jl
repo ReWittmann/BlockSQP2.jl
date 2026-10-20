@@ -127,6 +127,16 @@ mutable struct Solver
             ccall(@dlsym(BSQP, "Problemspec_set_condenser"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), new_Problemspec_obj, J_prob.condenser.Condenser_obj)
         end
         
+        if (length(J_prob.vgroup_ind) > 0)            
+            vgroup_types_ptr = (J_prob.vgroup_types .|> typename -> pointer(reinterpret(Cchar, transcode(UInt8, typename)))) |> pointer
+            vgroup_ind_ptr = J_prob.vgroup_ind .|> pointer |> pointer
+            vgroup_ind_l_ptr = J_prob.vgroup_ind .|> length |> pointer
+            
+            new_VariableSystem_obj = ccall(@dlsym(BSQP, "create_VariableSystem"), Ptr{Cvoid}, (Ptr{Ptr{Cchar}}, Ptr{Ptr{Cint}}, Ptr{Cint}, Cint), vgroup_types_ptr, vgroup_ind_ptr, vgroup_ind_l_ptr, Cint(length(vgroup_ind_l_ptr)))
+            ccall(@dlsym(BSQP, "Problemspec_pass_vsystem"), Cvoid, (Ptr{Cvoid}, Ptr{Cvoid}), new_Problemspec_obj, new_VariableSystem_obj)
+        end
+        
+        
         #Create blockSQP and QPsolver options classes on the C++ side
         new_SQPoptions_obj, new_QPsolver_options_obj = create_cxx_options(J_opts)
         

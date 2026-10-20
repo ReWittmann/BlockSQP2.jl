@@ -110,8 +110,8 @@ end
 
 hN = BlockDescriptor{nlpHess}(parent = MSsys, tag = Symbol(:h, _subscript(N)))
 xN = BlockDescriptor{nlpMSdependent}(parent = hN, matching = ck, tag = Symbol(:x, _subscript(N)))
-uN = BlockDescriptor{nlpMSfree}(parent = hN, tag = Symbol(:u, _subscript(N)))
-push!(vPreLayout, (hN, [(xN, nx), (uN, 0)]))
+# uN = BlockDescriptor{nlpMSfree}(parent = hN, tag = Symbol(:u, _subscript(N)))
+push!(vPreLayout, (hN, [(xN, nx)]))#, (uN, 0)]))
 push!(states, xN)
 
 vPreLayout = [(MSsys, vPreLayout)]
@@ -216,20 +216,63 @@ COLIND = jac_g0.colptr .-1
 
 jac_gNZ(x) = jacobian(g, sparse_forward_backend, x).nzval
 
+
+function primitive_get_vsystem(arg_layout::NLPlayout)
+    blockDs = simple_vBlocks(arg_layout)
+    
+    blockDfree = filter(blockDs) do blockD
+        blocktypeof(blockD) == nlpMSfree
+    end
+    
+    blockDdep = filter(blockDs) do blockD
+        blocktypeof(blockD) == nlpMSdependent
+    end
+    
+    nfree = axsublength(arg_layout.vLayout, blockDfree[1])
+    ndep = axsublength(arg_layout.vLayout, blockDdep[1])
+    
+    @assert all((blockDfree .|> Base.Fix1(axsublength, arg_layout.vLayout)) .== nfree)
+    @assert all((blockDdep .|> Base.Fix1(axsublength, arg_layout.vLayout)) .== ndep)
+    
+    vgroup_ind = [Int64[] for _ in 1:(ndep + nfree)]
+    vgroup_types = append!(repeat(["state"], ndep), repeat(["control"], nfree))
+    
+    ind = 0
+    for blockD in blockDs
+        if blocktypeof(blockD) == nlpMSfree
+            for i in 1:nfree
+                append!(vgroup_ind[ndep + i], ind + i)
+            end
+            ind += nfree
+        else
+            for i in 1:ndep
+                append!(vgroup_ind[i], ind + i)
+            end
+            ind += ndep
+        end
+    end
+    
+    return vgroup_types, vgroup_ind
+end
+
 # condenser = BlockSQP2.Condenser(layout)
 condenser = BlockSQP2.PartialCondenser(layout, 4)
 
+vgroup_types, vgroup_ind = primitive_get_vsystem(layout)
+print(vgroup_ind)
+vgroup_ind .|> v -> v .-= 1
+print(vgroup_types, vgroup_ind)
 
 vblocks = BlockSQP2.create_vblocks(layout)
 
-("BlockSQP2 allows passing sparse Jacobians, so it will have a runtime advantage.\n")
+print("BlockSQP2 allows passing sparse Jacobians, so it will have a runtime advantage.\n")
 # alternative: prob = BlockSQPProblem(...)
 prob = BlockSQP2.Problem(
     f, g, grad_f, BlockSQP2.fnothing,
     collect(lb_var), collect(ub_var), lb_con, ub_con,
     collect(x_start), zeros(axlength(vLayout) + axlength(cLayout));
     blockIdx = hessBlockIndexZeroBased(layout), jac_g_row = ROW, jac_g_colind = COLIND, jac_g_nz = jac_gNZ,
-    vblocks = BlockSQP2.create_vblocks(layout), condenser = condenser
+    vblocks = BlockSQP2.create_vblocks(layout), condenser = condenser, vgroup_types = vgroup_types, vgroup_ind = vgroup_ind
 )
 opts = BlockSQP2.sparse_options()
 opts.max_extra_steps = 0
@@ -250,6 +293,8 @@ finish!(meth)
 BlockSQP2.get_primal_solution(meth)
 x_opt = BlockSQP2.get_primal_solution(meth)
 x_opt = ComponentArray(x_opt, layout.vLayout)
+
+@info "Plotting solution ..."
 
 using CairoMakie
 using GLMakie

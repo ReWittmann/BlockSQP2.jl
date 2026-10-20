@@ -1,5 +1,5 @@
 mutable struct Problem
-
+    
     nVar::Cint
     nCon::Cint
     nnz::Cint
@@ -7,6 +7,9 @@ mutable struct Problem
     
     vblocks::Vector{vblock}
     condenser::Union{Condenser, Nothing}
+    
+    vgroup_types::Vector{String}
+    vgroup_ind::Vector{Vector{Cint}}
     
     lb_var::Vector{Cdouble}
     ub_var::Vector{Cdouble}
@@ -27,10 +30,10 @@ mutable struct Problem
     jac_g_nz::Function
     jac_g_row::Vector{Cint}
     jac_g_colind::Vector{Cint}
-
+    
     x0::Vector{Cdouble}
     lambda0::Vector{Cdouble}
-
+    
     function Problem(f::Function,
                      g::Function,
                      grad_f::Function,
@@ -46,20 +49,25 @@ mutable struct Problem
                      blockIdx::Vector{INT_T_1} = Int64[0, length(lb_var)],
                      vblocks::Vector{vblock} = vblock[],
                      condenser::Union{Condenser, Nothing} = nothing,
-                     jac_g_row::Vector{INT_T_2} = Int64[],
-                     jac_g_colind::Vector{INT_T_3} = Int64[],
+                     vgroup_types::Vector{String} = String[],
+                     vgroup_ind::Vector{Vector{INT_T_2}} = Vector{Int64}[],
+                     jac_g_row::Vector{INT_T_3} = Int64[],
+                     jac_g_colind::Vector{INT_T_4} = Int64[],
                      jac_g_nz::Function = fnothing, 
                     #  constrVioReducer::Function = fnothing,
                      last_hessBlock::Function = fnothing, 
                      hess::Function = fnothing
-                     ) where {FLOAT_T <: AbstractFloat, INT_T_1 <: Integer, INT_T_2 <: Integer, INT_T_3 <: Integer}
+                     ) where {FLOAT_T <: AbstractFloat, INT_T_1 <: Integer, INT_T_2 <: Integer, INT_T_3 <: Integer, INT_T_4 <: Integer}
                         if blockIdx[1] == 1
                             blockIdx = copy(blockIdx) .-1
                         end
                         @assert blockIdx[1] == 0 && blockIdx[end] == length(x0)
                         nnz = length(jac_g_colind) > 0 ? length(jac_g_row) : -1
+                        
+                        @assert length(vgroup_types) == length(vgroup_ind)
+                        
                         new(Cint(length(lb_var)), Cint(length(lb_con)), Cint(nnz), [Cint(x) for x in blockIdx], 
-                            vblocks, condenser,
+                            vblocks, condenser, vgroup_types, vgroup_ind .|> x -> x .|> Cint,
                             [Cdouble(x) for x in lb_var], [Cdouble(x) for x in ub_var], [Cdouble(x) for x in lb_con], [Cdouble(x) for x in ub_con], Cdouble(lb_obj), Cdouble(ub_obj),
                             f, g, grad_f, jac_g, last_hessBlock, hess,
                             # constrVioReducer,
