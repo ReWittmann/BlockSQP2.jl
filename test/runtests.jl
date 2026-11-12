@@ -94,6 +94,9 @@ using SafeTestsets
         @test isapprox(sol_sparse_1.u, sol_sparse_2.u; atol = 1e-5)
         @test isapprox(sol_sparse_2.u, sol_sparse_3.u; atol = 1e-5)
     end
+    @safetestset "Automatic Hessian blocks" begin
+        include("autoblocks.jl")
+    end
     @safetestset "LP on unit circle" begin
         using BlockSQP2
         using Optimization
