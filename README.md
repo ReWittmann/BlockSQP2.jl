@@ -96,6 +96,44 @@ x_opt = get_primal_solution(meth)
 lam_opt = get_dual_solution(meth)
 
 ```
+## Automatic Hessian blocks with Optimization.jl
+
+`solve(prob, BlockSQP2.Optimizer(); autoblocks = true)` uses the stored positions
+of a sparse `lag_hess_prototype` to find independent Hessian blocks, even when
+their variables are interleaved. For an unconstrained problem, a sparse
+`hess_prototype` also works. A constrained problem requires a prototype for the
+full Lagrangian Hessian. Either triangle is sufficient, and explicitly stored
+zeros count as structural entries.
+
+The keyword defaults to `true`. Set `autoblocks = false` to use the single-block
+default. An explicit `blockIdx`, `layout`, nonempty `vblocks`, or `condenser`
+takes precedence. This works with both dense and sparse constraint Jacobians.
+
+```julia
+using BlockSQP2, Optimization, SparseArrays
+
+function loss(x, target)
+    d = x - target
+    return sum(abs2, d) + d[1] * d[3] + d[2] * d[4]
+end
+
+function grad!(g, x, target)
+    d = x - target
+    g .= 2 .* d .+ d[[3, 4, 1, 2]]
+end
+
+# The upper triangle connects variables 1 and 3, and variables 2 and 4.
+pattern = sparse([1, 2, 3, 4, 1, 2], [1, 2, 3, 4, 3, 4], ones(6), 4, 4)
+f = OptimizationFunction(loss; grad = grad!, hess_prototype = pattern)
+prob = OptimizationProblem(f, zeros(4), [1.0, 2.0, 3.0, 4.0])
+sol = solve(prob, BlockSQP2.Optimizer())
+```
+
+Callback iterates, `sol.u`, and `sol.original.bound_multiplier` use the original
+variable order. `sol.original.multiplier` holds the constraint multipliers in
+the original constraint order. Unconstrained solves retain the solver's dummy
+constraint multiplier in that field.
+
 ### See also
 [Corleone.jl](https://github.com/SciML/Corleone.jl) - setup optimal control problems, apply multiple-shooting to obtain structured nonlinear optimization problems, and much more.  
   
