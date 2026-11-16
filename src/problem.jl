@@ -1,3 +1,19 @@
+"""
+    Problem(f, g, grad_f, jac_g, lb_var, ub_var, lb_con, ub_con, x0, lambda0; kwargs...)
+
+Describe `min f(x)` subject to variable bounds and `lb_con ≤ g(x) ≤ ub_con`.
+Callbacks return a scalar objective, constraint vector, gradient vector, and an
+`nCon × nVar` Jacobian. Use `Float64` vectors for bounds and initial values;
+`lambda0` has `nVar + nCon` entries (variable bounds first).
+
+`blockIdx` gives contiguous Hessian block boundaries, normally zero based with
+endpoints `0` and `nVar`; one based boundaries are converted automatically.
+For sparse evaluation, supply `jac_g_nz(x)` and fixed, zero based CSC arrays
+`jac_g_row` and `jac_g_colind`, and use `Options(sparse=true)`.
+Otherwise supply `jac_g(x)` and use `Options(sparse=false)`.
+Optional `vblocks`, `condenser`, and zero based `vgroup_ind` describe structure
+for condensing and scaling. Also available as `BlockSQP2Problem`.
+"""
 mutable struct Problem
     
     nVar::Cint

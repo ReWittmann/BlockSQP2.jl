@@ -18,15 +18,17 @@
         |...MSdependent
         |...MSfree
     
-    The dependent a free sections may have further sublayouts, marking
+    The dependent and free sections may have further sublayouts, marking
     e.g. controls and parameters.
     In addition, it must have an attribute :matchings referring to a 
-    MultipleShootingMatchings constraint block indicating the state matching
+    `nlpMatchings` constraint block indicating the state matching
     constraints of the system.
 """
 abstract type MultipleShootingDF <: Variables end
 
+"""Shooting block for free variables such as controls; exported as `nlpMSfree`."""
 abstract type MSfree <: Variables end
+"""Shooting block determined by matching constraints; exported as `nlpMSdependent`."""
 abstract type MSdependent <: Variables end
 
 

@@ -1,4 +1,11 @@
 # Holder for C++ side SQPstats object
+"""
+    Stats(outpath::String)
+
+Own native solver statistics and output files in the existing ASCII directory
+`outpath` (use a trailing separator). Pass to `Solver`; access iteration counts
+with `get_itCount`. Also available as `BlockSQP2Stats`.
+"""
 mutable struct Stats
     SQPstats_obj::Ptr{Cvoid}
     function Stats(arg_obj::Ptr{Cvoid})
@@ -21,6 +28,11 @@ function Stats(outpath::String)
 end
 
 
+"""
+Result codes returned by `run!` as `SQPresults.T`. `it_finished` means the call's
+iteration budget ended; `partial_success`, `success`, and `super_success` are
+accepted by `is_success`. Negative values describe solver failures.
+"""
 @enumx SQPresults::Cint begin
     it_finished = Cint(0)
     partial_success = Cint(1)
@@ -34,10 +46,19 @@ end
     misc_error = Cint(-10)
 end
 
+"""Return whether a result is partial success, success, or super success."""
 function is_success(ret::SQPresults.T)
     return ret == SQPresults.partial_success || ret == SQPresults.success || ret == SQPresults.super_success
 end
 
+"""
+    Solver(problem::Problem, options::Options, stats::Stats)
+
+Own native SQP state and retain the Julia problem, options, and statistics.
+Construct after setting options, then call `init!`, `run!`, and `finish!`.
+Retrieve iterates with `get_primal_solution` and multiplier accessors.
+Native resources are released by a finalizer. Also available as `BlockSQP2Solver`.
+"""
 mutable struct Solver
     #C++ side objects
     SQPmethod_obj::Ptr{Cvoid}
@@ -158,11 +179,19 @@ mutable struct Solver
 end
 
 
+"""Initialize native solver state from the problem's starting values."""
 function init!(sol::Solver)
     BSQP = libblockSQP2[]
     ccall(@dlsym(BSQP, "SQPmethod_init"), Cvoid, (Ptr{Cvoid},), sol.SQPmethod_obj)
 end
 
+"""
+    run!(sol::Solver, maxIt::Integer, warmStart::Integer)
+
+Run up to `maxIt` SQP iterations and return `SQPresults.T`. Call `init!` first.
+Use `warmStart=0` for the first call and `1` to continue a previous run with its
+stored derivative and Hessian state. Native exceptions become Julia errors.
+"""
 function run!(sol::Solver, maxIt::Integer, warmStart::Integer)
     BSQP = libblockSQP2[]
     ret::Cint = ccall(@dlsym(BSQP, "SQPmethod_run"), Cint, (Ptr{Cvoid}, Cint, Cint), sol.SQPmethod_obj, Cint(maxIt), Cint(warmStart))
@@ -172,17 +201,20 @@ function run!(sol::Solver, maxIt::Integer, warmStart::Integer)
     return SQPresults.T(ret)    
 end
 
+"""Finalize solver reporting and output after a run; solution access remains available."""
 function finish!(sol::Solver)
     BSQP = libblockSQP2[]
     ccall(@dlsym(BSQP, "SQPmethod_finish"), Cvoid, (Ptr{Cvoid},), sol.SQPmethod_obj)
 end
 
+"""Return the iteration count stored in the solver's native statistics."""
 function get_itCount(sol::Solver)
     BSQP = libblockSQP2[]
     return ccall(@dlsym(BSQP, "SQPstats_get_itCount"), Cint, (Ptr{Cvoid},), sol.Jul_Stats.SQPstats_obj)
 end
 
 #Allocate space for solution on julia side and call C method to fill it
+"""Return a copy of the current primal iterate in original variable order."""
 function get_primal_solution(sol::Solver)
     BSQP = libblockSQP2[]
     xi_arr = Array{Cdouble, 1}(undef, sol.Jul_Problem.nVar)
@@ -190,6 +222,7 @@ function get_primal_solution(sol::Solver)
     return xi_arr
 end
 
+"""Return general-constraint multipliers, with sign reversed from native storage."""
 function get_dual_solution(sol::Solver)
     BSQP = libblockSQP2[]
     lam_arr = Array{Cdouble, 1}(undef, sol.Jul_Problem.nVar + sol.Jul_Problem.nCon)
@@ -197,6 +230,7 @@ function get_dual_solution(sol::Solver)
     return -lam_arr[sol.Jul_Problem.nVar + 1 : end]
 end
 
+"""Return sign-reversed native multipliers: variable bounds, then general constraints."""
 function get_dual_solution_full(sol::Solver)
     BSQP = libblockSQP2[]
     lam_arr = Array{Cdouble, 1}(undef, sol.Jul_Problem.nVar + sol.Jul_Problem.nCon)

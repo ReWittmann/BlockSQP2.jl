@@ -2,6 +2,11 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; programming solver based on [blockSQP](https://github.com/djanka2/blockSQP).  
 Copyright (c) 2025 Reinhold Wittmann <reinhold.wittmann@ovgu.de> and Christoph Plate <christoph.plate@ovgu.de>
 
+## Local documentation
+
+See [docs/README.md](docs/README.md) for building the Documenter site and running
+the headless Lotka–Volterra walkthrough locally.
+
 ## Installation
 
 This package requires the compiled binary of the C interface to [blockSQP2](https://github.com/ReWittmann/blockSQP2). One can either  

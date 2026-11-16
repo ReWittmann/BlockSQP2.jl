@@ -1,10 +1,11 @@
 """
-$(TYPEDEF)
-A generic type to store structure information of a nonlinear program,
-e.g. Hessian block structure, dependency structure, etc.
+    NLPlayout(vBlocks, vLayout, cBlocks, cLayout)
 
-# Fields
-$(FIELDS)
+Store variable and constraint descriptors with their ComponentArrays axes.
+Use tuples of `blockDescriptors(preLayout)` and axes from `to_Axis(preLayout)`.
+Construction checks specialized block relationships and requires any Hessian
+blocks to cover all variables. `vLayout` and `cLayout` map descriptors to vector
+sections; `vBlocks` and `cBlocks` retain the associated structural metadata.
 """
 struct NLPlayout{VB, VL <: ComponentArrays.AbstractAxis, CB, CL <: ComponentArrays.AbstractAxis}
     "Collection of BlockDescriptor{Variables} describing blocks of variables"

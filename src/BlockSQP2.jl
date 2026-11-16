@@ -55,13 +55,24 @@ module BlockSQP2
     end
 
     """
-    Struct to hold Optimization.jl solver.
+        Optimizer()
+
+    Algorithm for Optimization.jl. Load Optimization.jl, then call
+    `solve(prob, BlockSQP2.Optimizer(); options, layout, ...)`.
+    Also available as `BlockSQP2Optimizer`.
     """
     struct Optimizer end
     BlockSQP2Optimizer = Optimizer
     export BlockSQP2Optimizer
     
     # Structs to hold structure data used for scaling and condensing
+    """
+        vblock(size, dependent, bounds_implicit=false)
+
+    Native variable block metadata for scaling and condensing. `dependent` marks
+    variables determined by matching constraints; `bounds_implicit` marks bounds
+    already represented implicitly. See `create_vblocks` for layout conversion.
+    """
     struct vblock
         size::Int64
         dependent::Bool 
@@ -70,6 +81,7 @@ module BlockSQP2
         vblock(arg_size, arg_dependent, arg_bounds_implicit = false) = new(arg_size, arg_dependent, arg_bounds_implicit)
     end
 
+    """`cblock(size)`: native constraint block metadata used by a condenser."""
     struct cblock
         size::Int64
     end

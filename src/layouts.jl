@@ -7,6 +7,7 @@ function create_vblocks(struc::NLPlayout)
     return simple_vBlocks(struc) .|> x -> vblock(length(struc.vLayout[x]), has_parent_type(x, nlpMSdependent), false)
 end
 
+"""Convert a layout to native variable blocks, constraint blocks, Hessian sizes, and condensing targets."""
 function create_condenser_args(struc::NLPlayout)
     Dtargets = filter(x->(blocktypeof(x) <: nlpMultipleShootingDF), struc.vBlocks)
     if length(Dtargets) == 0
@@ -50,6 +51,13 @@ function Condenser(struc::NLPlayout, add_dep_bounds::Integer = 1)
     return Condenser(create_condenser_args(struc)..., add_dep_bounds)
 end
 
+"""
+    PartialCondenser(layout::NLPlayout, N_pcond, add_dep_bounds=1)
+
+Create a `Condenser` that splits each shooting target into `N_pcond` regions
+and condenses within them. This layout-based constructor is experimental.
+`add_dep_bounds=1` retains bounds on eliminated variables as constraints.
+"""
 function PartialCondenser(struc::NLPlayout, N_pcond::INT_T, add_dep_bounds::INT_T = 1) where INT_T <: Integer
     @warn "Creating a (Partial)Condenser from an NLPlayout is highly experimental for now"
     return PartialCondenser(create_condenser_args(struc)..., N_pcond, add_dep_bounds)

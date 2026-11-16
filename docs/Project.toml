@@ -1,0 +1,16 @@
+[deps]
+BlockSQP2 = "eedde146-038c-472b-a63b-c8c70ebda014"
+DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+SparseConnectivityTracer = "9f842d2f-2579-4b1d-911e-f412cf18a3f5"
+SparseMatrixColorings = "0a514795-09f3-496d-8182-132a7b665d35"
+
+[compat]
+DifferentiationInterface = "0.7"
+Documenter = "1"
+ForwardDiff = "1"
+SparseConnectivityTracer = "1"
+SparseMatrixColorings = "0.4"
+julia = "1.11"

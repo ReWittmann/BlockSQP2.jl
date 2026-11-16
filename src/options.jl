@@ -1,5 +1,16 @@
+"""Abstract supertype for options specific to a native QP solver."""
 abstract type QPsolverOptions end
 
+"""
+    Options(; kwargs...)
+
+Mutable SQP settings, also available as `BlockSQP2Options`. Common keywords are
+`opt_tol=1e-6`, `feas_tol=1e-6`, `sparse=true`, `hess_approx="SR1"`,
+`fallback_approx="BFGS"`, `max_conv_QPs=4`, and `automatic_scaling=false`.
+Set fields before constructing a `Solver`, which copies them to native objects.
+The direct interface takes its iteration limit from `run!`; `maxiters=100` is
+used by Optimization.jl. See the constructor for all defaults.
+"""
 mutable struct Options
     maxiters::Cint
     eps::Cdouble
@@ -144,6 +155,13 @@ mutable struct Options
 end
 
 
+"""
+    qpOASESoptions(; matrixSparsity=-1, printLevel=0, terminationTolerance=5.0e6*2.221e-16)
+
+Native qpOASES settings for `Options(qpsol_options=...)`.
+The current keyword constructor references an undefined `sparsityLevel`;
+leave `qpsol_options=nothing` to use native defaults.
+"""
 mutable struct qpOASESoptions <: QPsolverOptions
     matrixSparsity::Cint
     printLevel::Cint
@@ -263,6 +281,7 @@ function create_cxx_options(opts::Options)
     return SQPoptions_obj, QPsolver_options_obj
 end
 
+"""Return sparse SQP settings with SR1/OL updates and BFGS/COL fallback updates."""
 function sparse_options()
     opts = Options()
     opts.sparse = true

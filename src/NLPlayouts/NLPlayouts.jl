@@ -29,6 +29,7 @@ end
 @nlpexport Block Variables Constraints Hess Matching Matchings
 
 #Note: The AbstractVector is expected to be an AbstractVector{TupleBD{S}} or AbstractUnitRange
+"""Pre-layout entry `(descriptor, size_or_children)`; nest vectors of entries to form axes."""
 TupleBD = Tuple{BlockDescriptor, Union{AbstractVector, Integer}}
 # TupleBD = Tuple{BlockDescriptor, T} where T <: Union{AbstractVector, Integer, Union{AbstractVector, Integer}}
 export TupleBD
@@ -75,7 +76,7 @@ end
 
 """
     Extract structure information from objects of a modeling framework,
-    returning a complete NLPlayout. See `extract_preLayouts` for specifics.
+    returning a complete NLPlayout. See `get_preLayouts` for specifics.
     
     This function should only be used if the complete layout information
     is available from the passed arguments and does not need to be modified 

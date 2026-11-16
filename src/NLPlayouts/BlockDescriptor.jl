@@ -1,3 +1,4 @@
+"""Abstract supertype for descriptors identifying sections of an NLP layout."""
 abstract type AbstractBlockDescriptor end
 
 """generic BlockDescriptor type"""
@@ -27,6 +28,17 @@ Wrapper type for inner BlockDescriptor constructor selection
 """
 abstract type Btype{T <: Block} <: Block end
 
+"""
+    BlockDescriptor{T}(flags...; tag=gensym(), parent=nothing, attributes...)
+    BlockDescriptor(flags...; kwargs...)
+
+Identify a variable or constraint block of kind `T` (default `nlpBlock`).
+`tag` names its axis entry and `parent` describes nesting. Positional flags and
+extra keyword attributes are stored as metadata. Matching blocks require
+`input`, a vector of variable descriptors; dependent shooting blocks use
+`matching` to refer to their defining constraint. Reuse descriptor objects when
+building axes and indexing `ComponentArray`s.
+"""
 mutable struct BlockDescriptor{T <: Block} <: AbstractBlockDescriptor
     tag::Symbol
     parent::Union{BlockDescriptor, Nothing}
@@ -56,6 +68,7 @@ function BlockDescriptor{arg_T}(args...; kwargs...) where arg_T <: Matching
     return BlockDescriptor{Btype{arg_T}}(args...; kwargs...)
 end
 
+"""Return the block kind carried by a descriptor, e.g. `nlpHess`."""
 blocktypeof(::BlockDescriptor{T}) where T = T
 addtag(@nospecialize(blk::BlockDescriptor), _tag::Symbol) = (blk.tags = (blk.tags...,_tag);)
 

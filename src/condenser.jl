@@ -1,3 +1,10 @@
+"""
+    condensing_target(n_stages, vblock_start, vblock_end, cblock_start, cblock_end)
+
+Describe a shooting region to condense. Block ranges use zero based inclusive
+starts and exclusive ends. `n_stages` counts shooting intervals.
+Prefer `create_condenser_args(layout)` to assemble targets.
+"""
 struct condensing_target
     n_stages::Integer
     vblock_start::Integer
@@ -6,6 +13,16 @@ struct condensing_target
     cblock_end::Integer
 end
 
+"""
+    Condenser(vblocks, cblocks, hsizes, targets, add_dep_bounds=1)
+    Condenser(layout::NLPlayout, add_dep_bounds=1)
+
+Own native workspace for eliminating dependent variables from structured QPs.
+`hsizes` gives Hessian block sizes; `targets` identifies shooting regions.
+`add_dep_bounds=1` retains bounds on eliminated variables as constraints.
+The layout constructor is experimental. `PartialCondenser` also returns this
+type. A Julia finalizer releases native resources.
+"""
 mutable struct Condenser
     #Condenser constructor data
     vblock_array_obj::Ptr{Cvoid}
@@ -167,6 +184,16 @@ function condensed_nBlocks(J_cond::Condenser)
 end
 
 #TODO: Use SparseMatrixCSC from SparseArrays instead
+"""
+    Sparse_Matrix(m, n, nz, row, colind)
+    Sparse_Matrix(m, n, nnz)
+    Sparse_Matrix()
+
+Native CSC container for standalone condensing. `nz` stores values, `row` stores
+zero based row indices, and `colind` stores `n + 1` zero based column pointers.
+The size-only constructor leaves storage uninitialized except for the final
+column pointer.
+"""
 mutable struct Sparse_Matrix
     m::Int32
     n::Int32

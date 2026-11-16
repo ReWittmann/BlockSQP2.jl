@@ -56,6 +56,7 @@ function to_ViewAxis(arg::AbstractVector, start::Ref{I}) where I <: Integer
     return ViewAxis(UnitRange(start[], (start[] += I(axlength(ax))) - I(1)), ax)
 end
 
+"""Build a nested ComponentArrays axis from `(descriptor, size_or_children)` entries."""
 function to_Axis(arg::Vector{Tuple{BD, T}}) where {BD <: AbstractBlockDescriptor, T <: Union{AbstractVector, Integer}}
     names = Symbol[]
     vals = Union{UnitRange,ViewAxis}[]
@@ -67,6 +68,7 @@ function to_Axis(arg::Vector{Tuple{BD, T}}) where {BD <: AbstractBlockDescriptor
 end
 
 
+"""Collect all descriptors from a pre-layout in depth-first order (including parent blocks)."""
 function blockDescriptors(arg::T) where {T <: Union{Integer, UnitRange}}
     return BlockDescriptor[]
 end
@@ -95,10 +97,12 @@ function axsubkeys(ax::AbstractAxis, @nospecialize(ind::BlockDescriptor))
     return ax[ind].ax |> keys |> collect
 end
 
+"""Return a descriptor's one based range in the full flat vector represented by `ax`."""
 function axsubrange(ax::AbstractAxis, @nospecialize(ind::BlockDescriptor))
     return !isnothing(ind.parent) ? axsubrange(ax, ind.parent)[ax[ind].idx] : ax[ind].idx
 end
 
+"""Return the number of scalar entries in a descriptor's section of an axis."""
 function axsublength(ax::AbstractAxis, @nospecialize(blk::BlockDescriptor))
     return length(axsubrange(ax, blk))
 end
@@ -135,20 +139,24 @@ function has_parent_subtype(@nospecialize(blk::BlockDescriptor), TP::Type{T}) wh
     return blocktypeof(blk) <: T || (!isnothing(blk.parent) && has_parent_subtype(blk.parent, TP))
 end
 
+"""Return Hessian block descriptors in variable order."""
 function hessBlocks(layout::NLPlayout{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     return layout.vBlocks |> Base.Fix1(filter, x -> blocktypeof(x) <: Hess) |> collect |> (arr -> sort(arr, by = (x -> first(axsubrange(layout.vLayout, x)))))
 end
 
+"""Return Hessian block sizes, defaulting to one block covering all variables."""
 function hessBlockSizes(layout::NLPlayout{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     hBlocks = hessBlocks(layout)
     length(hBlocks) == 0 && return [axlength(layout.vLayout)]
     return hBlocks .|> Base.Fix1(axsublength, layout.vLayout)
 end
 
+"""Return zero based Hessian block boundaries, including `0` and the total variable count."""
 function hessBlockIndexZeroBased(layout::NLPlayout{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     return cumsum(Int64[0, hessBlockSizes(layout)...])
 end
 
+"""Return one based Hessian block boundaries, ending one past the final variable."""
 function hessBlockIndexOneBased(layout::NLPlayout{VB,VL,CB,CL}) where {VB, VL <: ComponentArrays.Axis, CB, CL}
     return cumsum(Int64[1, hessBlockSizes(layout)...])
 end
