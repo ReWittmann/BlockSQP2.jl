@@ -272,7 +272,7 @@ x_opt = ComponentArray(x_opt, layout.vLayout)
 @test BlockSQP2.get_itCount(meth) < 30
 
 
-opts.automatic_scaling = true
+opts.automatic_scaling = false
 opts.max_conv_QPs = 4
 opts.conv_strategy = "reduced_regularization"
 meth = BlockSQP2.Solver(prob_vblocks, opts, stats)
